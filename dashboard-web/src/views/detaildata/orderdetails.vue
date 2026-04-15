@@ -116,49 +116,138 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import ArtLineBarChart from '@/components/core/charts/art-line-bar-chart/index.vue'
+import { fetchOrderList } from '@/api/dashboard'
 
 const rangeDate = ref('')
 
 const orderStats = ref([
-  { label: '本月订单总金额', value: '¥104.56万', growth: '8.3%', isUp: true, colorCls: 'text-purple-500' },
-  { label: '本月订单笔数', value: '156笔', growth: '12.1%', isUp: true, colorCls: 'text-blue-500' },
-  { label: '平均订单金额', value: '¥6,702', growth: '3.5%', isUp: false, colorCls: 'text-orange-500' },
-  { label: '订单完成率', value: '86.5%', growth: '4.2%', isUp: true, colorCls: 'text-green-500' },
-  { label: '待审核订单', value: '12笔', growth: '2.1%', isUp: false, colorCls: 'text-red-400' },
-  { label: '已取消订单', value: '3笔', growth: '1.0%', isUp: false, colorCls: 'text-gray-400' },
-  { label: '新客户订单占比', value: '42%', growth: '5.0%', isUp: true, colorCls: 'text-cyan-500' },
-  { label: '复购率', value: '58%', growth: '2.3%', isUp: true, colorCls: 'text-indigo-500' },
+  { label: '本月订单总金额', value: '¥0', growth: '0%', isUp: true, colorCls: 'text-purple-500' },
+  { label: '本月订单笔数', value: '0笔', growth: '0%', isUp: true, colorCls: 'text-blue-500' },
+  { label: '平均订单金额', value: '¥0', growth: '0%', isUp: false, colorCls: 'text-orange-500' },
+  { label: '订单完成率', value: '0%', growth: '0%', isUp: true, colorCls: 'text-green-500' },
 ])
 
-const months = ['1月', '2月', '3月', '4月', '5月', '6月']
-const orderAmountData = [78, 88, 102, 96, 115, 125]
-const orderCountData = [110, 125, 148, 138, 162, 156]
+const months = ref<string[]>([])
+const orderAmountData = ref<number[]>([])
+const orderCountData = ref<number[]>([])
 
-const channelData = [
-  { label: '直销渠道', value: '68笔', percent: 44, color: '#7C3AED' },
-  { label: '线上平台', value: '42笔', percent: 27, color: '#A78BFA' },
-  { label: '代理商', value: '28笔', percent: 18, color: '#60A5FA' },
-  { label: '电话销售', value: '18笔', percent: 11, color: '#34D399' },
-]
+const channelData = ref([
+  { label: '直销渠道', value: '0笔', percent: 0, color: '#7C3AED' },
+  { label: '线上平台', value: '0笔', percent: 0, color: '#A78BFA' },
+  { label: '代理商', value: '0笔', percent: 0, color: '#60A5FA' },
+  { label: '电话销售', value: '0笔', percent: 0, color: '#34D399' },
+])
 
-const amountSegments = [
-  { label: '5万以上大单', count: 18, process: 85, color: '#7C3AED' },
-  { label: '1万~5万', count: 56, process: 65, color: '#A78BFA' },
-  { label: '5千~1万', count: 48, process: 55, color: '#60A5FA' },
-  { label: '1千~5千', count: 24, process: 30, color: '#93C5FD' },
-  { label: '1千以下', count: 10, process: 15, color: '#BAE6FD' },
-]
+const amountSegments = ref([
+  { label: '5万以上大单', count: 0, process: 0, color: '#7C3AED' },
+  { label: '1万~5万', count: 0, process: 0, color: '#A78BFA' },
+  { label: '5千~1万', count: 0, process: 0, color: '#60A5FA' },
+  { label: '1千~5千', count: 0, process: 0, color: '#93C5FD' },
+  { label: '1千以下', count: 0, process: 0, color: '#BAE6FD' },
+])
 
-const orderTableData = [
-  { orderNo: 'PO-20240601', customer: 'AAA公司', amount: '125,000', status: '已完成', statusType: 'success' },
-  { orderNo: 'PO-20240602', customer: 'BBB公司', amount: '48,200', status: '待审核', statusType: 'warning' },
-  { orderNo: 'PO-20240603', customer: 'CCC公司', amount: '89,000', status: '已完成', statusType: 'success' },
-  { orderNo: 'PO-20240604', customer: 'DDD公司', amount: '12,000', status: '进行中', statusType: 'primary' },
-  { orderNo: 'PO-20240605', customer: 'EEE公司', amount: '65,400', status: '已完成', statusType: 'success' },
-]
+const orderTableData = ref<{ orderNo: string; customer: string; amount: string; status: string; statusType: string }[]>([])
+
+// 加载数据
+const loadData = async () => {
+  try {
+    const res: any = await fetchOrderList({ current: 1, size: 100 })
+    if (res && res.code === 200 && res.data && res.data.records) {
+      const records = res.data.records
+
+      // 更新统计数据
+      let totalAmount = 0
+      let totalCount = records.length
+      records.forEach((record: any) => {
+        totalAmount += Number(record.amount || 0)
+      })
+
+      if (orderStats.value[0]) {
+        orderStats.value[0].value = '¥' + (totalAmount / 10000).toFixed(2) + '万'
+      }
+      if (orderStats.value[1]) {
+        orderStats.value[1].value = totalCount + '笔'
+      }
+      if (orderStats.value[2] && totalCount > 0) {
+        orderStats.value[2].value = '¥' + Math.round(totalAmount / totalCount).toLocaleString()
+      }
+
+      // 按月份分组统计
+      const monthMap = new Map<string, { amount: number; count: number }>()
+      records.forEach((record: any) => {
+        const month = record.orderDate ? record.orderDate.substring(0, 7) : '未知'
+        const existing = monthMap.get(month) || { amount: 0, count: 0 }
+        existing.amount += Number(record.amount || 0)
+        existing.count += 1
+        monthMap.set(month, existing)
+      })
+
+      const sortedMonths = Array.from(monthMap.keys()).sort()
+      months.value = sortedMonths.map(m => m.substring(5) + '月')
+      orderAmountData.value = sortedMonths.map(m => Math.round((monthMap.get(m)?.amount || 0) / 10000))
+      orderCountData.value = sortedMonths.map(m => monthMap.get(m)?.count || 0)
+
+      // 渠道分布统计
+      const channelMap = new Map<string, number>()
+      records.forEach((record: any) => {
+        const channel = record.channel || '直销渠道'
+        channelMap.set(channel, (channelMap.get(channel) || 0) + 1)
+      })
+      const channelColors = ['#7C3AED', '#A78BFA', '#60A5FA', '#34D399']
+      const channelList = Array.from(channelMap.entries()).sort((a, b) => b[1] - a[1])
+      channelData.value = channelList.slice(0, 4).map(([label, count], index) => ({
+        label,
+        value: count + '笔',
+        percent: Math.round((count / totalCount) * 100),
+        color: channelColors[index] || '#7C3AED'
+      }))
+
+      // 订单金额段分布
+      const segmentMap: Record<string, { count: number; threshold: number }> = {
+        '5万以上大单': { count: 0, threshold: 50000 },
+        '1万~5万': { count: 0, threshold: 10000 },
+        '5千~1万': { count: 0, threshold: 5000 },
+        '1千~5千': { count: 0, threshold: 1000 },
+        '1千以下': { count: 0, threshold: 0 }
+      }
+      records.forEach((record: any) => {
+        const amount = Number(record.amount || 0)
+        if (amount >= 50000) segmentMap['5万以上大单'].count++
+        else if (amount >= 10000) segmentMap['1万~5万'].count++
+        else if (amount >= 5000) segmentMap['5千~1万'].count++
+        else if (amount >= 1000) segmentMap['1千~5千'].count++
+        else segmentMap['1千以下'].count++
+      })
+      const segmentColors = ['#7C3AED', '#A78BFA', '#60A5FA', '#93C5FD', '#BAE6FD']
+      const segmentOrder = ['5万以上大单', '1万~5万', '5千~1万', '1千~5千', '1千以下']
+      const maxSegCount = Math.max(...segmentOrder.map(s => segmentMap[s].count), 1)
+      amountSegments.value = segmentOrder.map((label, index) => ({
+        label,
+        count: segmentMap[label].count,
+        process: Math.round((segmentMap[label].count / maxSegCount) * 100),
+        color: segmentColors[index]
+      }))
+
+      // 表格数据
+      orderTableData.value = records.slice(0, 5).map((record: any) => ({
+        orderNo: record.orderNo || record.id || 'N/A',
+        customer: record.customerName || '未知',
+        amount: Number(record.amount || 0).toLocaleString(),
+        status: record.status === 'completed' ? '已完成' : record.status === 'pending' ? '待审核' : '进行中',
+        statusType: record.status === 'completed' ? 'success' : record.status === 'pending' ? 'warning' : 'primary'
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load order data:', error)
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <style scoped>

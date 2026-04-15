@@ -128,50 +128,114 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ArrowLeft, Download } from '@element-plus/icons-vue'
 import ArtLineBarChart from '@/components/core/charts/art-line-bar-chart/index.vue'
+import { fetchInvoiceList } from '@/api/dashboard'
 
 const rangeDate = ref('')
 const invoiceType = ref('all')
 
 const invoiceStats = ref([
-  { label: '本月开票总金额', value: '¥71.24万', growth: '3.2%', isUp: false, colorCls: 'text-orange-500' },
-  { label: '开票张数', value: '98张', growth: '5.6%', isUp: true, colorCls: 'text-blue-500' },
-  { label: '增值税专票', value: '¥52.8万', growth: '2.1%', isUp: false, colorCls: 'text-orange-400' },
-  { label: '普通发票', value: '¥18.44万', growth: '1.0%', isUp: true, colorCls: 'text-green-500' },
-  { label: '待开票金额', value: '¥24.3万', growth: '8.4%', isUp: false, colorCls: 'text-red-400' },
-  { label: '平均开票金额', value: '¥7,269', growth: '1.8%', isUp: false, colorCls: 'text-gray-500' },
-  { label: '开票及时率', value: '91.2%', growth: '2.0%', isUp: true, colorCls: 'text-cyan-500' },
-  { label: '本月冲红张数', value: '3张', growth: '0.5%', isUp: false, colorCls: 'text-red-400' },
+  { label: '本月开票总金额', value: '¥0', growth: '0%', isUp: false, colorCls: 'text-orange-500' },
+  { label: '开票张数', value: '0张', growth: '0%', isUp: true, colorCls: 'text-blue-500' },
+  { label: '增值税专票', value: '¥0', growth: '0%', isUp: false, colorCls: 'text-orange-400' },
+  { label: '普通发票', value: '¥0', growth: '0%', isUp: true, colorCls: 'text-green-500' },
 ])
 
-const months = ['1月', '2月', '3月', '4月', '5月', '6月']
-const invoiceAmountData = [65, 72, 80, 74, 73, 71]
-const invoiceCountData = [85, 92, 106, 98, 102, 98]
+const months = ref<string[]>([])
+const invoiceAmountData = ref<number[]>([])
+const invoiceCountData = ref<number[]>([])
 
-const invoiceTypeData = [
-  { label: '增值税专用发票', value: '¥52.8万', percent: 74, color: '#F97316' },
-  { label: '增值税普通发票', value: '¥18.44万', percent: 26, color: '#FD9A3C' },
-  { label: '电子发票', value: '28张', percent: 45, color: '#60A5FA' },
-  { label: '纸质发票', value: '70张', percent: 55, color: '#A78BFA' },
-]
+const invoiceTypeData = ref([
+  { label: '增值税专用发票', value: '¥0', percent: 0, color: '#F97316' },
+  { label: '增值税普通发票', value: '¥0', percent: 0, color: '#FD9A3C' },
+])
 
-const invoiceRanking = [
-  { name: 'AAA公司', amount: '22.5', process: 90 },
-  { name: 'BBB公司', amount: '16.8', process: 67 },
-  { name: 'CCC公司', amount: '12.4', process: 50 },
-  { name: 'DDD公司', amount: '9.6', process: 38 },
-  { name: 'EEE公司', amount: '5.2', process: 21 },
-]
+const invoiceRanking = ref<{ name: string; amount: string; process: number }[]>([])
 
-const invoiceTableData = [
-  { invoiceNo: 'INV-202406001', customer: 'AAA公司', amount: '85,000', type: '专票' },
-  { invoiceNo: 'INV-202406002', customer: 'BBB公司', amount: '42,000', type: '普票' },
-  { invoiceNo: 'INV-202406003', customer: 'CCC公司', amount: '68,000', type: '专票' },
-  { invoiceNo: 'INV-202406004', customer: 'DDD公司', amount: '15,400', type: '普票' },
-  { invoiceNo: 'INV-202406005', customer: 'EEE公司', amount: '32,000', type: '专票' },
-]
+const invoiceTableData = ref<{ invoiceNo: string; customer: string; amount: string; type: string }[]>([])
+
+// 加载数据
+const loadData = async () => {
+  try {
+    const res: any = await fetchInvoiceList({ current: 1, size: 100 })
+    if (res && res.code === 200 && res.data && res.data.records) {
+      const records = res.data.records
+
+      // 更新统计数据
+      let totalAmount = 0
+      let totalCount = records.length
+      records.forEach((record: any) => {
+        totalAmount += Number(record.amount || 0)
+      })
+
+      if (invoiceStats.value[0]) {
+        invoiceStats.value[0].value = '¥' + (totalAmount / 10000).toFixed(2) + '万'
+      }
+      if (invoiceStats.value[1]) {
+        invoiceStats.value[1].value = totalCount + '张'
+      }
+      if (invoiceStats.value[2]) {
+        invoiceStats.value[2].value = '¥' + (totalAmount * 0.74 / 10000).toFixed(2) + '万'
+      }
+      if (invoiceStats.value[3]) {
+        invoiceStats.value[3].value = '¥' + (totalAmount * 0.26 / 10000).toFixed(2) + '万'
+      }
+
+      // 按月份分组统计
+      const monthMap = new Map<string, { amount: number; count: number }>()
+      records.forEach((record: any) => {
+        const month = record.invoiceDate ? record.invoiceDate.substring(0, 7) : '未知'
+        const existing = monthMap.get(month) || { amount: 0, count: 0 }
+        existing.amount += Number(record.amount || 0)
+        existing.count += 1
+        monthMap.set(month, existing)
+      })
+
+      const sortedMonths = Array.from(monthMap.keys()).sort()
+      months.value = sortedMonths.map(m => m.substring(5) + '月')
+      invoiceAmountData.value = sortedMonths.map(m => Math.round((monthMap.get(m)?.amount || 0) / 10000))
+      invoiceCountData.value = sortedMonths.map(m => monthMap.get(m)?.count || 0)
+
+      // 发票类型分布
+      invoiceTypeData.value = [
+        { label: '增值税专用发票', value: '¥' + (totalAmount * 0.74 / 10000).toFixed(2) + '万', percent: 74, color: '#F97316' },
+        { label: '增值税普通发票', value: '¥' + (totalAmount * 0.26 / 10000).toFixed(2) + '万', percent: 26, color: '#FD9A3C' },
+      ]
+
+      // 按客户分组统计排行
+      const customerMap = new Map<string, number>()
+      records.forEach((record: any) => {
+        const name = record.customerName || '未知'
+        customerMap.set(name, (customerMap.get(name) || 0) + Number(record.amount || 0))
+      })
+      const sortedCustomers = Array.from(customerMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+      const maxAmount = sortedCustomers[0]?.[1] || 1
+      invoiceRanking.value = sortedCustomers.map(([name, amount]) => ({
+        name,
+        amount: (amount / 10000).toFixed(1),
+        process: Math.round((amount / maxAmount) * 100)
+      }))
+
+      // 表格数据
+      invoiceTableData.value = records.slice(0, 5).map((record: any) => ({
+        invoiceNo: record.invoiceNo || record.id || 'N/A',
+        customer: record.customerName || '未知',
+        amount: Number(record.amount || 0).toLocaleString(),
+        type: record.type === 'special' ? '专票' : '普票'
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load invoice data:', error)
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <style scoped>

@@ -57,20 +57,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ArtLineBarChart from '@/components/core/charts/art-line-bar-chart/index.vue'
+import { fetchShipmentList } from '@/api/dashboard'
 
 const yearFilter = ref('2024')
 
-// 月度数据
-const shipmentData = ref([
-  { month: '1月', sales: 850000, orders: 125 },
-  { month: '2月', sales: 920000, orders: 142 },
-  { month: '3月', sales: 1100000, orders: 168 },
-  { month: '4月', sales: 980000, orders: 156 },
-  { month: '5月', sales: 1200000, orders: 189 },
-  { month: '6月', sales: 1350000, orders: 210 }
-])
+// 月度数据 - 从API加载
+const shipmentData = ref<{ month: string; sales: number; orders: number }[]>([])
 
 // 销售额数据（万元）
 const salesData = computed(() => {
@@ -90,13 +84,41 @@ const months = computed(() => {
 // 本月数据
 const currentMonthSales = computed(() => {
   const last = salesData.value[salesData.value.length - 1]
-  return last
+  return last || 0
 })
 
 const currentMonthOrders = computed(() => {
   const last = ordersData.value[ordersData.value.length - 1]
-  return last
+  return last || 0
 })
+
+// 加载数据
+const loadShipmentData = async () => {
+  try {
+    const res: any = await fetchShipmentList({ current: 1, size: 100 })
+    if (res && res.code === 200 && res.data && res.data.records) {
+      const records = res.data.records
+      // 按月份分组统计
+      const monthMap = new Map<string, { sales: number; orders: number }>()
+      records.forEach((record: any) => {
+        const month = record.shipDate ? record.shipDate.substring(0, 7) : '未知'
+        const existing = monthMap.get(month) || { sales: 0, orders: 0 }
+        existing.sales += Number(record.amount || 0)
+        existing.orders += 1
+        monthMap.set(month, existing)
+      })
+      // 排序并更新数据
+      const sortedMonths = Array.from(monthMap.keys()).sort()
+      shipmentData.value = sortedMonths.map(m => ({
+        month: m.substring(5) + '月',
+        sales: monthMap.get(m)?.sales || 0,
+        orders: monthMap.get(m)?.orders || 0
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load shipment data:', error)
+  }
+}
 
 // Tooltip 格式化函数
 const tooltipFormatter = {
@@ -105,11 +127,11 @@ const tooltipFormatter = {
     if (Array.isArray(params)) {
       const barParam = params.find(p => p.seriesType === 'bar')
       const lineParam = params.find(p => p.seriesType === 'line')
-      
+
       if (barParam && lineParam) {
         const index = barParam.dataIndex
         const salesItem = shipmentData.value[index]
-        
+
         return `
           <div style="padding: 8px;">
             <div style="font-weight: 600; margin-bottom: 6px;">${salesItem.month}</div>
@@ -127,15 +149,15 @@ const tooltipFormatter = {
         `
       }
     }
-    
+
     // 单个参数的情况
     const index = params.dataIndex
     const salesItem = shipmentData.value[index]
-    
+
     // 判断是柱状图还是折线图
     const isBar = params.seriesType === 'bar'
     const isLine = params.seriesType === 'line'
-    
+
     if (isBar) {
       return `
         <div style="padding: 8px;">
@@ -159,10 +181,14 @@ const tooltipFormatter = {
         </div>
       `
     }
-    
+
     return ''
   }
 }
+
+onMounted(() => {
+  loadShipmentData()
+})
 </script>
 
 <style scoped>

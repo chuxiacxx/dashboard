@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
+  import { fetchAddRole, fetchUpdateRole } from '@/api/system-manage'
 
   type RoleListItem = Api.SystemManage.RoleListItem
 
@@ -116,7 +117,6 @@
 
   /**
    * 初始化表单数据
-   * 根据弹窗类型填充表单或重置表单
    */
   const initForm = () => {
     if (props.dialogType === 'edit' && props.roleData) {
@@ -143,20 +143,32 @@
 
   /**
    * 提交表单
-   * 验证通过后调用接口保存数据
+   * 验证通过后调用API保存数据
    */
   const handleSubmit = async () => {
     if (!formRef.value) return
 
     try {
       await formRef.value.validate()
-      // TODO: 调用新增/编辑接口
-      const message = props.dialogType === 'add' ? '新增成功' : '修改成功'
-      ElMessage.success(message)
+      const data = {
+        roleName: form.roleName,
+        roleCode: form.roleCode,
+        description: form.description,
+        enabled: form.enabled
+      }
+
+      if (props.dialogType === 'add') {
+        await fetchAddRole(data)
+        ElMessage.success('新增成功')
+      } else {
+        await fetchUpdateRole({ id: form.roleId, ...data })
+        ElMessage.success('修改成功')
+      }
       emit('success')
       handleClose()
     } catch (error) {
-      console.log('表单验证失败:', error)
+      console.log('提交失败:', error)
+      ElMessage.error('操作失败')
     }
   }
 </script>

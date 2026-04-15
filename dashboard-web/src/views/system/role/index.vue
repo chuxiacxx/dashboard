@@ -58,12 +58,12 @@
 <script setup lang="ts">
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchGetRoleList } from '@/api/system-manage'
+  import { fetchGetRoleList, fetchDeleteRole } from '@/api/system-manage'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import RoleSearch from './modules/role-search.vue'
   import RoleEditDialog from './modules/role-edit-dialog.vue'
   import RolePermissionDialog from './modules/role-permission-dialog.vue'
-  import { ElTag, ElMessageBox } from 'element-plus'
+  import { ElTag, ElMessageBox, ElMessage } from 'element-plus'
 
   defineOptions({ name: 'Role' })
 
@@ -193,14 +193,11 @@
 
   /**
    * 搜索处理
-   * @param params 搜索参数
    */
   const handleSearch = (params: Record<string, any>) => {
-    // 处理日期区间参数，把 daterange 转换为 startTime 和 endTime
     const { daterange, ...filtersParams } = params
     const [startTime, endTime] = Array.isArray(daterange) ? daterange : [null, null]
 
-    // 搜索参数赋值
     Object.assign(searchParams, { ...filtersParams, startTime, endTime })
     getData()
   }
@@ -230,10 +227,15 @@
       cancelButtonText: '取消',
       type: 'warning'
     })
-      .then(() => {
-        // TODO: 调用删除接口
-        ElMessage.success('删除成功')
-        refreshData()
+      .then(async () => {
+        try {
+          await fetchDeleteRole(row.roleId)
+          ElMessage.success('删除成功')
+          refreshData()
+        } catch (error) {
+          console.error('删除失败:', error)
+          ElMessage.error('删除失败')
+        }
       })
       .catch(() => {
         ElMessage.info('已取消删除')

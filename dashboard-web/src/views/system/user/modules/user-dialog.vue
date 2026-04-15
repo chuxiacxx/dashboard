@@ -39,8 +39,8 @@
 </template>
 
 <script setup lang="ts">
-  import { ROLE_LIST_DATA } from '@/mock/temp/formData'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { fetchAddUser, fetchUpdateUser } from '@/api/system-manage'
 
   interface Props {
     visible: boolean
@@ -56,8 +56,11 @@
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()
 
-  // 角色列表数据
-  const roleList = ref(ROLE_LIST_DATA)
+  // 角色列表数据 - 简单配置
+  const roleList = ref([
+    { roleCode: 'ADMIN', roleName: '管理员' },
+    { roleCode: 'USER', roleName: '普通用户' },
+  ])
 
   // 对话框显示控制
   const dialogVisible = computed({
@@ -72,6 +75,7 @@
 
   // 表单数据
   const formData = reactive({
+    id: '',
     username: '',
     phone: '',
     gender: '男',
@@ -101,6 +105,7 @@
     const row = props.userData
 
     Object.assign(formData, {
+      id: isEdit && row ? row.id || '' : '',
       username: isEdit && row ? row.userName || '' : '',
       phone: isEdit && row ? row.userPhone || '' : '',
       gender: isEdit && row ? row.userGender || '男' : '男',
@@ -127,16 +132,35 @@
 
   /**
    * 提交表单
-   * 验证通过后触发提交事件
+   * 验证通过后调用API提交
    */
   const handleSubmit = async () => {
     if (!formRef.value) return
 
-    await formRef.value.validate((valid) => {
+    await formRef.value.validate(async (valid) => {
       if (valid) {
-        ElMessage.success(dialogType.value === 'add' ? '添加成功' : '更新成功')
-        dialogVisible.value = false
-        emit('submit')
+        try {
+          const data = {
+            id: formData.id || undefined,
+            username: formData.username,
+            phone: formData.phone,
+            gender: formData.gender,
+            roles: formData.role
+          }
+
+          if (dialogType.value === 'add') {
+            await fetchAddUser(data)
+            ElMessage.success('添加成功')
+          } else {
+            await fetchUpdateUser(data)
+            ElMessage.success('更新成功')
+          }
+          dialogVisible.value = false
+          emit('submit')
+        } catch (error) {
+          console.error('提交失败:', error)
+          ElMessage.error('操作失败')
+        }
       }
     })
   }

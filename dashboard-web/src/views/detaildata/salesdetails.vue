@@ -114,30 +114,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import ArtLineBarChart from '@/components/core/charts/art-line-bar-chart/index.vue'
+import { fetchSalesList } from '@/api/dashboard'
+import { fetchDashboardSummary } from '@/api/dashboard'
 
 const rangeDate = ref('')
 
-// 1. 扩展统计数据
-const extendedStats = ref([
-  { label: '本月累计销售额', value: '¥95.68万', growth: '12.5%', isUp: true, colorCls: 'text-blue-500', icon: 'ri:money-dollar-circle-line' },
-  { label: '本月订单总数', value: '156单', growth: '8.2%', isUp: true, colorCls: 'text-green-500', icon: 'ri:file-list-3-line' },
-  { label: '平均订购数量', value: '500个', growth: '2.4%', isUp: false, colorCls: 'text-orange-500', icon: 'ri:user-star-line' },
-  { label: '本月预计回款', value: '¥24.5万', growth: '5.1%', isUp: true, colorCls: 'text-purple-500', icon: 'ri:hand-coin-line' },
-  { label: '本月新增潜客', value: '42位', growth: '15.3%', isUp: true, colorCls: 'text-cyan-500', icon: 'ri:user-add-line' },
-  { label: '被虐流失客户', value: '2位', growth: '0.5%', isUp: false, colorCls: 'text-red-400', icon: 'ri:user-unfollow-line' },
-  { label: '销售目标达成率', value: '79.7%', growth: '3.2%', isUp: true, colorCls: 'text-indigo-500', icon: 'ri:flag-line' },
-  { label: '客诉率', value: '12.4%', growth: '1.2%', isUp: true, colorCls: 'text-blue-400', icon: 'ri:pie-chart-line' },
+// 扩展统计数据
+interface StatItem {
+  label: string
+  value: string
+  growth: string
+  isUp: boolean
+  colorCls: string
+  icon: string
+}
+
+const extendedStats = ref<StatItem[]>([
+  { label: '本月累计销售额', value: '¥0', growth: '0%', isUp: true, colorCls: 'text-blue-500', icon: 'ri:money-dollar-circle-line' },
+  { label: '本月订单总数', value: '0单', growth: '0%', isUp: true, colorCls: 'text-green-500', icon: 'ri:file-list-3-line' },
+  { label: '平均订购数量', value: '0个', growth: '0%', isUp: false, colorCls: 'text-orange-500', icon: 'ri:user-star-line' },
+  { label: '本月预计回款', value: '¥0', growth: '0%', isUp: true, colorCls: 'text-purple-500', icon: 'ri:hand-coin-line' },
 ])
 
-// 2. 图表数据
-const months = ['1月', '2月', '3月', '4月', '5月', '6月']
-const salesData = [85, 92, 110, 98, 120, 135]
-const ordersData = [125, 142, 168, 156, 189, 210]
+// 图表数据
+const months = ref<string[]>([])
+const salesData = ref<number[]>([])
+const ordersData = ref<number[]>([])
 
-// 3. 漏斗数据
+// 漏斗数据
 const funnelData = [
   { label: '初步接洽', value: '500人', percent: 100, color: '#409EFF' },
   { label: '需求确认', value: '180人', percent: 36, color: '#79bbff' },
@@ -145,22 +152,80 @@ const funnelData = [
   { label: '成交签单', value: '42人', percent: 8, color: '#67C23A' },
 ]
 
-// 4. 排行榜
-const rankingList = [
-  { name: '销售A组 - 王经理', amount: '45.2', process: 90 },
-  { name: '销售B组 - 李主管', amount: '38.6', process: 77 },
-  { name: '华东区 - 张销售', amount: '32.1', process: 64 },
-  { name: '电商渠道', amount: '28.4', process: 56 },
-  { name: '个人代理 - 陈某', amount: '12.5', process: 25 },
-]
+// 排行榜
+const rankingList = ref<{ name: string; amount: string; process: number }[]>([])
 
-const tableData = [
-  { customer: 'AAA公司', amount: '125,000', status: '完成' },
-  { customer: 'BBB公司', amount: '48,200', status: '待审核' },
-  { customer: 'CCC公司', amount: '89,000', status: '完成' },
-  { customer: 'DDD公司', amount: '12,000', status: '进行中' },
-  { customer: 'EEE公司', amount: '65,400', status: '完成' },
-]
+// 表格数据
+const tableData = ref<{ customer: string; amount: string; status: string }[]>([])
+
+// 加载数据
+const loadData = async () => {
+  try {
+    // 获取汇总数据
+    const summaryRes: any = await fetchDashboardSummary()
+    if (summaryRes && summaryRes.code === 200 && summaryRes.data) {
+      const data = summaryRes.data
+      // 更新统计数据
+      if (extendedStats.value[0]) {
+        extendedStats.value[0].value = '¥' + ((data.salesAmount || 0) / 10000).toFixed(2) + '万'
+      }
+      if (extendedStats.value[1]) {
+        extendedStats.value[1].value = (data.orderCount || 0) + '单'
+      }
+    }
+
+    // 获取销售明细数据
+    const salesRes: any = await fetchSalesList({ current: 1, size: 100 })
+    if (salesRes && salesRes.code === 200 && salesRes.data && salesRes.data.records) {
+      const records = salesRes.data.records
+
+      // 按月份分组统计
+      const monthMap = new Map<string, { sales: number; orders: number }>()
+      records.forEach((record: any) => {
+        const month = record.saleDate ? record.saleDate.substring(0, 7) : '未知'
+        const existing = monthMap.get(month) || { sales: 0, orders: 0 }
+        existing.sales += Number(record.amount || 0)
+        existing.orders += 1
+        monthMap.set(month, existing)
+      })
+
+      // 更新图表数据
+      const sortedMonths = Array.from(monthMap.keys()).sort()
+      months.value = sortedMonths.map(m => m.substring(5) + '月')
+      salesData.value = sortedMonths.map(m => Math.round((monthMap.get(m)?.sales || 0) / 10000))
+      ordersData.value = sortedMonths.map(m => monthMap.get(m)?.orders || 0)
+
+      // 更新表格数据（前5条）
+      tableData.value = records.slice(0, 5).map((record: any) => ({
+        customer: record.customerName || '未知',
+        amount: Number(record.amount || 0).toLocaleString(),
+        status: record.status === '已完成' ? '完成' : '进行中'
+      }))
+
+      // 按销售员分组统计排行
+      const salesPersonMap = new Map<string, number>()
+      records.forEach((record: any) => {
+        const name = record.salesperson || '未知'
+        salesPersonMap.set(name, (salesPersonMap.get(name) || 0) + Number(record.amount || 0))
+      })
+      const sortedSales = Array.from(salesPersonMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+      const maxAmount = sortedSales[0]?.[1] || 1
+      rankingList.value = sortedSales.map(([name, amount]) => ({
+        name,
+        amount: (amount / 10000).toFixed(1),
+        process: Math.round((amount / maxAmount) * 100)
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load sales data:', error)
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <style scoped>

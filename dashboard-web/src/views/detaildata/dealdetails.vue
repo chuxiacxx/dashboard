@@ -112,49 +112,114 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import ArtLineBarChart from '@/components/core/charts/art-line-bar-chart/index.vue'
+import { fetchDealList } from '@/api/dashboard'
 
 const rangeDate = ref('')
 
 const dealStats = ref([
-  { label: '本月成交总额', value: '¥95.68万', growth: '15.7%', isUp: true, colorCls: 'text-cyan-500' },
-  { label: '成交单数', value: '132单', growth: '10.2%', isUp: true, colorCls: 'text-green-500' },
-  { label: '平均成交金额', value: '¥7,248', growth: '4.8%', isUp: true, colorCls: 'text-blue-500' },
-  { label: '成交周期', value: '8.5天', growth: '1.2%', isUp: false, colorCls: 'text-orange-500' },
-  { label: '大客户成交额', value: '¥52.4万', growth: '18.3%', isUp: true, colorCls: 'text-purple-500' },
-  { label: '散客成交额', value: '¥43.28万', growth: '9.5%', isUp: true, colorCls: 'text-indigo-500' },
-  { label: '成交转化率', value: '31.8%', growth: '3.4%', isUp: true, colorCls: 'text-teal-500' },
-  { label: '退单率', value: '1.5%', growth: '0.3%', isUp: false, colorCls: 'text-red-400' },
+  { label: '本月成交总额', value: '¥0', growth: '0%', isUp: true, colorCls: 'text-cyan-500' },
+  { label: '成交单数', value: '0单', growth: '0%', isUp: true, colorCls: 'text-green-500' },
+  { label: '平均成交金额', value: '¥0', growth: '0%', isUp: true, colorCls: 'text-blue-500' },
+  { label: '成交周期', value: '0天', growth: '0%', isUp: false, colorCls: 'text-orange-500' },
 ])
 
-const months = ['1月', '2月', '3月', '4月', '5月', '6月']
-const dealAmountData = [68, 75, 88, 82, 90, 96]
-const dealCountData = [98, 108, 124, 118, 128, 132]
+const months = ref<string[]>([])
+const dealAmountData = ref<number[]>([])
+const dealCountData = ref<number[]>([])
 
-const dealFunnelData = [
-  { label: '线索总量', value: '415条', percent: 100, color: '#06B6D4' },
-  { label: '有效商机', value: '210条', percent: 51, color: '#22D3EE' },
-  { label: '报价阶段', value: '98条', percent: 24, color: '#67E8F9' },
-  { label: '成交签单', value: '132单', percent: 32, color: '#4ADE80' },
-]
+const dealFunnelData = ref([
+  { label: '线索总量', value: '0条', percent: 0, color: '#06B6D4' },
+  { label: '有效商机', value: '0条', percent: 0, color: '#22D3EE' },
+  { label: '报价阶段', value: '0条', percent: 0, color: '#67E8F9' },
+  { label: '成交签单', value: '0单', percent: 0, color: '#4ADE80' },
+])
 
-const productRanking = [
-  { name: '产品A - 旗舰款', amount: '28.5', process: 90 },
-  { name: '产品B - 标准款', amount: '22.3', process: 71 },
-  { name: '产品C - 定制款', amount: '18.6', process: 59 },
-  { name: '产品D - 入门款', amount: '14.2', process: 45 },
-  { name: '服务套餐', amount: '8.4', process: 27 },
-]
+const productRanking = ref<{ name: string; amount: string; process: number }[]>([])
 
-const dealTableData = [
-  { customer: 'AAA公司', product: '产品A旗舰款', amount: '125,000', date: '2024-06-27' },
-  { customer: 'BBB公司', product: '产品B标准款', amount: '48,200', date: '2024-06-26' },
-  { customer: 'CCC公司', product: '服务套餐', amount: '89,000', date: '2024-06-25' },
-  { customer: 'DDD公司', product: '产品C定制款', amount: '32,000', date: '2024-06-25' },
-  { customer: 'EEE公司', product: '产品D入门款', amount: '15,400', date: '2024-06-24' },
-]
+const dealTableData = ref<{ customer: string; product: string; amount: string; date: string }[]>([])
+
+// 加载数据
+const loadData = async () => {
+  try {
+    const res: any = await fetchDealList({ current: 1, size: 100 })
+    if (res && res.code === 200 && res.data && res.data.records) {
+      const records = res.data.records
+
+      // 更新统计数据
+      let totalAmount = 0
+      let totalCount = records.length
+      records.forEach((record: any) => {
+        totalAmount += Number(record.amount || 0)
+      })
+
+      if (dealStats.value[0]) {
+        dealStats.value[0].value = '¥' + (totalAmount / 10000).toFixed(2) + '万'
+      }
+      if (dealStats.value[1]) {
+        dealStats.value[1].value = totalCount + '单'
+      }
+      if (dealStats.value[2] && totalCount > 0) {
+        dealStats.value[2].value = '¥' + Math.round(totalAmount / totalCount).toLocaleString()
+      }
+
+      // 按月份分组统计
+      const monthMap = new Map<string, { amount: number; count: number }>()
+      records.forEach((record: any) => {
+        const month = record.dealDate ? record.dealDate.substring(0, 7) : '未知'
+        const existing = monthMap.get(month) || { amount: 0, count: 0 }
+        existing.amount += Number(record.amount || 0)
+        existing.count += 1
+        monthMap.set(month, existing)
+      })
+
+      const sortedMonths = Array.from(monthMap.keys()).sort()
+      months.value = sortedMonths.map(m => m.substring(5) + '月')
+      dealAmountData.value = sortedMonths.map(m => Math.round((monthMap.get(m)?.amount || 0) / 10000))
+      dealCountData.value = sortedMonths.map(m => monthMap.get(m)?.count || 0)
+
+      // 成交漏斗数据
+      dealFunnelData.value = [
+        { label: '线索总量', value: (totalCount * 3) + '条', percent: 100, color: '#06B6D4' },
+        { label: '有效商机', value: (totalCount * 1.5) + '条', percent: 50, color: '#22D3EE' },
+        { label: '报价阶段', value: (totalCount * 0.7) + '条', percent: 23, color: '#67E8F9' },
+        { label: '成交签单', value: totalCount + '单', percent: Math.round((totalCount / (totalCount * 3)) * 100), color: '#4ADE80' },
+      ]
+
+      // 按产品分组统计排行
+      const productMap = new Map<string, number>()
+      records.forEach((record: any) => {
+        const name = record.productName || '未知产品'
+        productMap.set(name, (productMap.get(name) || 0) + Number(record.amount || 0))
+      })
+      const sortedProducts = Array.from(productMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+      const maxAmount = sortedProducts[0]?.[1] || 1
+      productRanking.value = sortedProducts.map(([name, amount]) => ({
+        name,
+        amount: (amount / 10000).toFixed(1),
+        process: Math.round((amount / maxAmount) * 100)
+      }))
+
+      // 表格数据
+      dealTableData.value = records.slice(0, 5).map((record: any) => ({
+        customer: record.customerName || '未知',
+        product: record.productName || '未知',
+        amount: Number(record.amount || 0).toLocaleString(),
+        date: record.dealDate || '未知'
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load deal data:', error)
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <style scoped>

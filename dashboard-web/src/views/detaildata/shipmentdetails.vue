@@ -131,52 +131,112 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ArrowLeft, Download } from '@element-plus/icons-vue'
 import ArtLineBarChart from '@/components/core/charts/art-line-bar-chart/index.vue'
+import { fetchShipmentList, fetchDashboardSummary } from '@/api/dashboard'
 
 const rangeDate = ref('')
 const statusFilter = ref('all')
 const timeUnit = ref('日')
 
 // 核心指标
-const shipStats = [
-  { label: '本月出货总额', value: '¥87.32万', growth: '12.5%', colorCls: 'text-success' },
-  { label: '出货单量', value: '142单', growth: '8.4%', colorCls: 'text-blue-500' },
-  { label: '平均单价', value: '¥6,149', growth: '2.1%', colorCls: 'text-orange-500' },
-  { label: '准时交付率', value: '98.6%', growth: '0.5%', colorCls: 'text-purple-500' },
-]
+const shipStats = ref([
+  { label: '本月出货总额', value: '¥0万', growth: '0%', colorCls: 'text-success' },
+  { label: '出货单量', value: '0单', growth: '0%', colorCls: 'text-blue-500' },
+  { label: '平均单价', value: '¥0', growth: '0%', colorCls: 'text-orange-500' },
+  { label: '准时交付率', value: '0%', growth: '0%', colorCls: 'text-purple-500' },
+])
 
-// 图表模拟数据
-const dates = ['06-20', '06-21', '06-22', '06-23', '06-24', '06-25']
-const shipmentAmount = [12, 18, 15, 22, 19, 25] // 单位：万元
-const shipmentCount = [4, 6, 5, 8, 7, 9] // 单位：单
+// 图表数据 - 从API加载
+const dates = ref<string[]>([])
+const shipmentAmount = ref<number[]>([])
+const shipmentCount = ref<number[]>([])
 
 // 地区分布
-const regions = [
+const regions = ref([
   { name: '华东大区', value: 45, color: '#67C23A' },
   { name: '华南大区', value: 30, color: '#409EFF' },
   { name: '华北地区', value: 15, color: '#E6A23C' },
   { name: '海外出口', value: 10, color: '#F56C6C' },
-]
-
-// 主要客户 Top 5 (新增)
-const topCustomers = ref([
-  { name: 'AAA公司', amount: 28.5, percent: 90 },
-  { name: 'BBB公司', amount: 19.2, percent: 65 },
-  { name: 'CCC公司', amount: 15.6, percent: 52 },
-  { name: 'DDD公司', amount: 10.4, percent: 35 },
-  { name: 'EEE公司', amount: 8.2, percent: 28 },
 ])
 
-// 模拟表格数据
-const shipData = [
-  { shipNo: 'SN-202406001', customer: '123', product: '123123', amount: '45,000', carrier: '顺丰速运', status: '已签收', date: '2024-06-25' },
-  { shipNo: 'SN-202406002', customer: 'abc', product: '1231asd', amount: '12,800', carrier: '京东物流', status: '运输中', date: '2024-06-26' },
-  { shipNo: 'SN-202406003', customer: 'aaa', product: '43212', amount: '8,900', carrier: '跨越速运', status: '运输中', date: '2024-06-26' },
-  { shipNo: 'SN-202406004', customer: 'bbb', product: '12222', amount: '3,200', carrier: '中通快递', status: '已签收', date: '2024-06-24' },
-  { shipNo: 'SN-202406005', customer: 'ccc', product: 'asdasd', amount: '15,400', carrier: '德邦快递', status: '运输中', date: '2024-06-27' },
-]
+// 主要客户 Top 5
+const topCustomers = ref<{ name: string; amount: string; percent: number }[]>([])
+
+// 表格数据
+const shipData = ref<{ shipNo: string; customer: string; product: string; amount: string; carrier: string; status: string; date: string }[]>([])
+
+// 加载数据
+const loadData = async () => {
+  try {
+    // 获取汇总数据
+    const summaryRes: any = await fetchDashboardSummary()
+    if (summaryRes && summaryRes.code === 200 && summaryRes.data) {
+      const data = summaryRes.data
+      if (shipStats.value[0]) {
+        shipStats.value[0].value = '¥' + ((data.shipmentAmount || 0) / 10000).toFixed(2) + '万'
+      }
+      if (shipStats.value[1]) {
+        shipStats.value[1].value = (data.shipmentCount || 0) + '单'
+      }
+    }
+
+    // 获取发货明细数据
+    const shipmentRes: any = await fetchShipmentList({ current: 1, size: 100 })
+    if (shipmentRes && shipmentRes.code === 200 && shipmentRes.data && shipmentRes.data.records) {
+      const records = shipmentRes.data.records
+
+      // 按日期分组统计
+      const dateMap = new Map<string, { amount: number; count: number }>()
+      records.forEach((record: any) => {
+        const date = record.shipDate ? record.shipDate.substring(5, 10) : '未知'
+        const existing = dateMap.get(date) || { amount: 0, count: 0 }
+        existing.amount += Number(record.amount || 0)
+        existing.count += 1
+        dateMap.set(date, existing)
+      })
+
+      const sortedDates = Array.from(dateMap.keys()).sort()
+      dates.value = sortedDates
+      shipmentAmount.value = sortedDates.map(d => Math.round((dateMap.get(d)?.amount || 0) / 10000))
+      shipmentCount.value = sortedDates.map(d => dateMap.get(d)?.count || 0)
+
+      // 按客户分组统计排行
+      const customerMap = new Map<string, number>()
+      records.forEach((record: any) => {
+        const name = record.customerName || '未知'
+        customerMap.set(name, (customerMap.get(name) || 0) + Number(record.amount || 0))
+      })
+      const sortedCustomers = Array.from(customerMap.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+      const maxAmount = sortedCustomers[0]?.[1] || 1
+      topCustomers.value = sortedCustomers.map(([name, amount]) => ({
+        name,
+        amount: (amount / 10000).toFixed(1),
+        percent: Math.round((amount / maxAmount) * 100)
+      }))
+
+      // 更新表格数据（前5条）
+      shipData.value = records.slice(0, 5).map((record: any) => ({
+        shipNo: record.shipNo || record.id || 'N/A',
+        customer: record.customerName || '未知',
+        product: record.productName || '未知',
+        amount: Number(record.amount || 0).toLocaleString(),
+        carrier: record.carrier || '未知',
+        status: record.status === 'delivered' ? '已签收' : '运输中',
+        date: record.shipDate || '未知'
+      }))
+    }
+  } catch (error) {
+    console.error('Failed to load shipment data:', error)
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <style scoped>

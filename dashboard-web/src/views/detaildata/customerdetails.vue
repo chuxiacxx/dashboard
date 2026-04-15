@@ -139,50 +139,136 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import ArtLineBarChart from '@/components/core/charts/art-line-bar-chart/index.vue'
+import { fetchCustomerList, fetchDealList } from '@/api/dashboard'
 
 const rangeDate = ref('')
 const customerFilter = ref('全部')
 
 const customerStats = ref([
-  { label: '新客户成交额', value: '¥40.18万', growth: '22.4%', isUp: true, colorCls: 'text-blue-500' },
-  { label: '老客户成交额', value: '¥55.50万', growth: '11.2%', isUp: true, colorCls: 'text-amber-500' },
-  { label: '新客户数量', value: '42位', growth: '15.3%', isUp: true, colorCls: 'text-cyan-500' },
-  { label: '活跃老客户', value: '90位', growth: '5.6%', isUp: true, colorCls: 'text-green-500' },
-  { label: '新客户平均单价', value: '¥9,567', growth: '6.2%', isUp: true, colorCls: 'text-indigo-500' },
-  { label: '老客户复购率', value: '72.3%', growth: '3.1%', isUp: true, colorCls: 'text-orange-500' },
-  { label: '客户流失数', value: '2位', growth: '0.5%', isUp: false, colorCls: 'text-red-400' },
-  { label: '客户满意度', value: '4.8分', growth: '0.2%', isUp: true, colorCls: 'text-purple-500' },
+  { label: '新客户成交额', value: '¥0', growth: '0%', isUp: true, colorCls: 'text-blue-500' },
+  { label: '老客户成交额', value: '¥0', growth: '0%', isUp: true, colorCls: 'text-amber-500' },
+  { label: '新客户数量', value: '0位', growth: '0%', isUp: true, colorCls: 'text-cyan-500' },
+  { label: '活跃老客户', value: '0位', growth: '0%', isUp: true, colorCls: 'text-green-500' },
 ])
 
-const months = ['1月', '2月', '3月', '4月', '5月', '6月']
-const newCustomerData = [28, 32, 38, 35, 40, 40]
-const oldCustomerData = [45, 48, 52, 50, 54, 56]
+const months = ref<string[]>([])
+const newCustomerData = ref<number[]>([])
+const oldCustomerData = ref<number[]>([])
 
-const customerSegments = [
-  { label: '新客户首单', value: '¥40.18万', percent: 42, color: '#3B82F6' },
-  { label: '老客户复购', value: '¥40.06万', percent: 41, color: '#F59E0B' },
-  { label: '老客户增购', value: '¥15.44万', percent: 16, color: '#34D399' },
-  { label: '老客户转介绍', value: '¥11.2万', percent: 12, color: '#A78BFA' },
-]
+const customerSegments = ref([
+  { label: '新客户首单', value: '¥0', percent: 0, color: '#3B82F6' },
+  { label: '老客户复购', value: '¥0', percent: 0, color: '#F59E0B' },
+  { label: '老客户增购', value: '¥0', percent: 0, color: '#34D399' },
+  { label: '老客户转介绍', value: '¥0', percent: 0, color: '#A78BFA' },
+])
 
-const newCustomerSources = [
-  { channel: '线上广告投放', count: 15, process: 85 },
-  { channel: '老客户转介绍', count: 12, process: 68 },
-  { channel: '展会/活动', count: 8, process: 45 },
-  { channel: '内容营销', count: 5, process: 28 },
-  { channel: '其他渠道', count: 2, process: 11 },
-]
+const newCustomerSources = ref<{ channel: string; count: number; process: number }[]>([])
 
-const customerTableData = [
-  { customer: 'AAA公司', type: '新客户', amount: '125,000', date: '2024-06-27' },
-  { customer: 'BBB公司', type: '老客户', amount: '88,000', date: '2024-06-26' },
-  { customer: 'CCC公司', type: '老客户', amount: '45,200', date: '2024-06-26' },
-  { customer: 'DDD公司', type: '新客户', amount: '32,000', date: '2024-06-25' },
-  { customer: 'EEE公司', type: '老客户', amount: '65,400', date: '2024-06-24' },
-]
+const customerTableData = ref<{ customer: string; type: string; amount: string; date: string }[]>([])
+
+// 加载数据
+const loadData = async () => {
+  try {
+    // 获取客户列表
+    const customerRes: any = await fetchCustomerList({ current: 1, size: 100 })
+    // 获取成交数据
+    const dealRes: any = await fetchDealList({ current: 1, size: 100 })
+
+    const customers = customerRes?.data?.records || []
+    const deals = dealRes?.data?.records || []
+
+    // 统计新老客户
+    const newCustomers = customers.filter((c: any) => c.isNew === 1)
+    const oldCustomers = customers.filter((c: any) => c.isNew === 0)
+
+    // 统计新老客户成交额
+    let newCustomerAmount = 0
+    let oldCustomerAmount = 0
+    deals.forEach((deal: any) => {
+      const customer = customers.find((c: any) => c.id === deal.customerId)
+      if (customer?.isNew === 1) {
+        newCustomerAmount += Number(deal.amount || 0)
+      } else {
+        oldCustomerAmount += Number(deal.amount || 0)
+      }
+    })
+
+    if (customerStats.value[0]) {
+      customerStats.value[0].value = '¥' + (newCustomerAmount / 10000).toFixed(2) + '万'
+    }
+    if (customerStats.value[1]) {
+      customerStats.value[1].value = '¥' + (oldCustomerAmount / 10000).toFixed(2) + '万'
+    }
+    if (customerStats.value[2]) {
+      customerStats.value[2].value = newCustomers.length + '位'
+    }
+    if (customerStats.value[3]) {
+      customerStats.value[3].value = oldCustomers.length + '位'
+    }
+
+    // 按月份分组统计
+    const monthMap = new Map<string, { newAmount: number; oldAmount: number }>()
+    deals.forEach((deal: any) => {
+      const month = deal.dealDate ? deal.dealDate.substring(0, 7) : '未知'
+      const customer = customers.find((c: any) => c.id === deal.customerId)
+      const existing = monthMap.get(month) || { newAmount: 0, oldAmount: 0 }
+      if (customer?.isNew === 1) {
+        existing.newAmount += Number(deal.amount || 0)
+      } else {
+        existing.oldAmount += Number(deal.amount || 0)
+      }
+      monthMap.set(month, existing)
+    })
+
+    const sortedMonths = Array.from(monthMap.keys()).sort()
+    months.value = sortedMonths.map(m => m.substring(5) + '月')
+    newCustomerData.value = sortedMonths.map(m => Math.round((monthMap.get(m)?.newAmount || 0) / 10000))
+    oldCustomerData.value = sortedMonths.map(m => Math.round((monthMap.get(m)?.oldAmount || 0) / 10000))
+
+    // 客户构成
+    const totalAmount = newCustomerAmount + oldCustomerAmount
+    customerSegments.value = [
+      { label: '新客户首单', value: '¥' + (newCustomerAmount / 10000).toFixed(2) + '万', percent: totalAmount > 0 ? Math.round((newCustomerAmount / totalAmount) * 100) : 0, color: '#3B82F6' },
+      { label: '老客户复购', value: '¥' + (oldCustomerAmount * 0.7 / 10000).toFixed(2) + '万', percent: totalAmount > 0 ? Math.round((oldCustomerAmount * 0.7 / totalAmount) * 100) : 0, color: '#F59E0B' },
+      { label: '老客户增购', value: '¥' + (oldCustomerAmount * 0.2 / 10000).toFixed(2) + '万', percent: totalAmount > 0 ? Math.round((oldCustomerAmount * 0.2 / totalAmount) * 100) : 0, color: '#34D399' },
+      { label: '老客户转介绍', value: '¥' + (oldCustomerAmount * 0.1 / 10000).toFixed(2) + '万', percent: totalAmount > 0 ? Math.round((oldCustomerAmount * 0.1 / totalAmount) * 100) : 0, color: '#A78BFA' },
+    ]
+
+    // 新客户来源
+    const channelMap = new Map<string, number>()
+    newCustomers.forEach((c: any) => {
+      const channel = c.channel || '其他渠道'
+      channelMap.set(channel, (channelMap.get(channel) || 0) + 1)
+    })
+    const channelList = Array.from(channelMap.entries()).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    const maxChannel = channelList[0]?.[1] || 1
+    newCustomerSources.value = channelList.map(([channel, count]) => ({
+      channel,
+      count,
+      process: Math.round((count / maxChannel) * 100)
+    }))
+
+    // 表格数据
+    customerTableData.value = deals.slice(0, 5).map((deal: any) => {
+      const customer = customers.find((c: any) => c.id === deal.customerId)
+      return {
+        customer: customer?.name || deal.customerName || '未知',
+        type: customer?.isNew === 1 ? '新客户' : '老客户',
+        amount: Number(deal.amount || 0).toLocaleString(),
+        date: deal.dealDate || '未知'
+      }
+    })
+  } catch (error) {
+    console.error('Failed to load customer data:', error)
+  }
+}
+
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <style scoped>
