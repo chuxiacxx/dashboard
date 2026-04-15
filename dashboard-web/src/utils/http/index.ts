@@ -42,10 +42,13 @@ interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
 
+/** 直接请求后端（开发环境） */
+const API_BASE_URL = 'http://localhost:8080'
+
 /** Axios实例 */
 const axiosInstance = axios.create({
   timeout: REQUEST_TIMEOUT,
-  baseURL: VITE_API_URL,
+  baseURL: API_BASE_URL,
   withCredentials: VITE_WITH_CREDENTIALS === 'true',
   validateStatus: (status) => status >= 200 && status < 300,
   transformResponse: [
@@ -67,7 +70,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (request: InternalAxiosRequestConfig) => {
     const { accessToken } = useUserStore()
-    if (accessToken) request.headers.set('Authorization', accessToken)
+    if (accessToken) request.headers.set('Authorization', 'Bearer ' + accessToken)
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {
       request.headers.set('Content-Type', 'application/json')

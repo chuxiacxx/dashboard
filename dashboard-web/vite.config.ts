@@ -28,7 +28,7 @@ export default ({ mode }: { mode: string }) => {
       port: Number(VITE_PORT),
       proxy: {
         '/api': {
-          target: VITE_API_PROXY_URL,
+          target: 'http://localhost:8080',
           changeOrigin: true
         }
       },

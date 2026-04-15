@@ -34,6 +34,7 @@ export function fetchRegister(params: { username: string; password: string }) {
  */
 export function fetchGetUserInfo() {
   return api.get<Api.Auth.UserInfo>({
-    url: '/api/user/info'
+    url: '/api/user/info',
+    raw: true
   })
 }
