@@ -68,15 +68,13 @@
     userGender: undefined,
     userPhone: undefined,
     userEmail: undefined,
-    status: '1'
+    status: undefined
   })
 
-  // 用户状态配置
-  const USER_STATUS_CONFIG = {
-    '1': { type: 'success' as const, text: '在线' },
-    '2': { type: 'info' as const, text: '离线' },
-    '3': { type: 'warning' as const, text: '异常' },
-    '4': { type: 'danger' as const, text: '注销' }
+  // 用户状态配置 (0=正常, 1=禁用)
+  const USER_STATUS_CONFIG: Record<string, { type: 'success' | 'warning' | 'info' | 'danger'; text: string }> = {
+    '0': { type: 'success', text: '正常' },
+    '1': { type: 'danger', text: '禁用' }
   } as const
 
   /**
