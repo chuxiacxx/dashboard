@@ -15,8 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -52,7 +51,11 @@ public class AuthService {
         user.setLastLoginTime(LocalDateTime.now());
         userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+        // 生成包含角色的JWT token
+        List<String> roles = user.getRoles().stream()
+                .map(Role::getCode)
+                .collect(Collectors.toList());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), roles);
 
         LoginVO vo = new LoginVO();
         vo.setToken(token);

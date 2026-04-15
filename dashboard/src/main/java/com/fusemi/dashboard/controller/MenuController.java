@@ -5,6 +5,7 @@ import com.fusemi.dashboard.dto.MenuDTO;
 import com.fusemi.dashboard.service.MenuService;
 import com.fusemi.dashboard.vo.MenuTreeVO;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,22 +27,26 @@ public class MenuController {
     }
 
     @GetMapping("/menu/tree")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN')")
     public Result<List<MenuTreeVO>> getMenuTree() {
         return Result.ok(menuService.getAllMenuTree());
     }
 
     @PostMapping("/menu")
+    @PreAuthorize("hasRole('R_SUPER')")
     public Result<?> addMenu(@Valid @RequestBody MenuDTO dto) {
         return menuService.addMenu(dto);
     }
 
     @PutMapping("/menu/{id}")
+    @PreAuthorize("hasRole('R_SUPER')")
     public Result<?> updateMenu(@PathVariable Long id, @RequestBody MenuDTO dto) {
         dto.setId(id);
         return menuService.updateMenu(dto);
     }
 
     @DeleteMapping("/menu/{id}")
+    @PreAuthorize("hasRole('R_SUPER')")
     public Result<?> deleteMenu(@PathVariable Long id) {
         return menuService.deleteMenu(id);
     }

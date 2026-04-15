@@ -6,6 +6,7 @@ import com.fusemi.dashboard.dto.RoleDTO;
 import com.fusemi.dashboard.service.RoleService;
 import com.fusemi.dashboard.vo.RoleItemVO;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,6 +20,7 @@ public class RoleController {
     }
 
     @GetMapping("/list")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN')")
     public Result<PageResult<RoleItemVO>> getRoleList(
             @RequestParam Integer current,
             @RequestParam Integer size,
@@ -28,17 +30,20 @@ public class RoleController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('R_SUPER')")
     public Result<?> addRole(@Valid @RequestBody RoleDTO dto) {
         return roleService.addRole(dto);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('R_SUPER')")
     public Result<?> updateRole(@PathVariable Long id, @RequestBody RoleDTO dto) {
         dto.setRoleId(id);
         return roleService.updateRole(dto);
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('R_SUPER')")
     public Result<?> deleteRole(@PathVariable Long id) {
         return roleService.deleteRole(id);
     }
