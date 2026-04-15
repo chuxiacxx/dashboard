@@ -6,17 +6,25 @@ import java.util.List;
 @Data
 public class PageResult<T> {
 
+    private List<T> records;
+    private Long current;
+    private Long size;
     private Long total;
-    private List<T> list;
 
     public PageResult() {}
 
-    public PageResult(Long total, List<T> list) {
+    public PageResult(List<T> records, Long current, Long size, Long total) {
+        this.records = records;
+        this.current = current;
+        this.size = size;
         this.total = total;
-        this.list = list;
     }
 
-    public static <T> PageResult<T> of(Long total, List<T> list) {
-        return new PageResult<>(total, list);
+    public static <T> PageResult<T> of(Long total, List<T> records) {
+        return new PageResult<>(records, 1L, (long) records.size(), total);
+    }
+
+    public static <T> PageResult<T> of(Long total, List<T> records, Long current, Long size) {
+        return new PageResult<>(records, current, size, total);
     }
 }

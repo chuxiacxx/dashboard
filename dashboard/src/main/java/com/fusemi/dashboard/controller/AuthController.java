@@ -3,13 +3,14 @@ package com.fusemi.dashboard.controller;
 import com.fusemi.dashboard.common.Result;
 import com.fusemi.dashboard.dto.LoginDTO;
 import com.fusemi.dashboard.service.AuthService;
-import com.fusemi.dashboard.vo.UserVO;
+import com.fusemi.dashboard.vo.LoginVO;
+import com.fusemi.dashboard.vo.UserInfoVO;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api")
 public class AuthController {
 
     private final AuthService authService;
@@ -18,18 +19,24 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/login")
-    public Result<?> login(@Valid @RequestBody LoginDTO dto) {
+    @PostMapping("/auth/login")
+    public Result<LoginVO> login(@Valid @RequestBody LoginDTO dto) {
         return authService.login(dto);
     }
 
-    @GetMapping("/userinfo")
-    public Result<UserVO> getUserInfo(Authentication authentication) {
+    @GetMapping("/auth/userinfo")
+    public Result<UserInfoVO> getUserInfo(Authentication authentication) {
         String username = authentication.getName();
-        UserVO userInfo = authService.getUserInfo(username);
+        UserInfoVO userInfo = authService.getUserInfo(username);
         if (userInfo == null) {
             return Result.unauthorized("用户不存在");
         }
         return Result.ok(userInfo);
+    }
+
+    /** 前端调用 /api/user/info，需兼容 /api/auth/userinfo */
+    @GetMapping("/user/info")
+    public Result<UserInfoVO> getUserInfoAlt(Authentication authentication) {
+        return getUserInfo(authentication);
     }
 }

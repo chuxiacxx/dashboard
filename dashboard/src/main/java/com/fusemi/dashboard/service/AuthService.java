@@ -2,6 +2,8 @@ package com.fusemi.dashboard.service;
 
 import com.fusemi.dashboard.dto.LoginDTO;
 import com.fusemi.dashboard.entity.User;
+import com.fusemi.dashboard.vo.LoginVO;
+import com.fusemi.dashboard.vo.UserInfoVO;
 import com.fusemi.dashboard.vo.UserVO;
 import com.fusemi.dashboard.repository.UserRepository;
 import com.fusemi.dashboard.util.JwtUtil;
@@ -10,6 +12,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
@@ -26,8 +31,8 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    public Result<?> login(LoginDTO dto) {
-        User user = userRepository.findByUsername(dto.getUsername())
+    public Result<LoginVO> login(LoginDTO dto) {
+        User user = userRepository.findByUsername(dto.getUserName())
                 .orElse(null);
 
         if (user == null || !passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
@@ -38,26 +43,33 @@ public class AuthService {
             return Result.fail("账号已被禁用");
         }
 
-        // 更新最后登录时间
         user.setLastLoginTime(LocalDateTime.now());
         userRepository.save(user);
 
         String token = jwtUtil.generateToken(user.getId(), user.getUsername());
-        return Result.ok("登录成功", token);
+
+        LoginVO vo = new LoginVO();
+        vo.setToken(token);
+        vo.setRefreshToken(token); // 简化：refreshToken 同 token
+        return Result.ok("登录成功", vo);
     }
 
-    public UserVO getUserInfo(String username) {
+    public UserInfoVO getUserInfo(String username) {
         User user = userRepository.findByUsername(username).orElse(null);
         if (user == null) return null;
 
-        UserVO vo = new UserVO();
-        vo.setId(user.getId());
-        vo.setUsername(user.getUsername());
-        vo.setNickname(user.getNickname());
+        UserInfoVO vo = new UserInfoVO();
+        vo.setUserId(user.getId());
+        vo.setUserName(user.getUsername());
         vo.setEmail(user.getEmail());
-        vo.setPhone(user.getPhone());
         vo.setAvatar(user.getAvatar());
-        vo.setStatus(user.getStatus());
+        vo.setButtons(Collections.emptyList());
+
+        Set<String> roles = user.getRoles().stream()
+                .map(r -> r.getCode())
+                .collect(Collectors.toSet());
+        vo.setRoles(roles.stream().toList());
+
         return vo;
     }
 }
