@@ -8,7 +8,7 @@
         <el-option label="B类产品" value="B"></el-option>
       </el-select>
     </div>
-    
+
     <!-- 使用垂直柱状图显示所有产品 -->
     <ArtBarChart
       height="13.7rem"
@@ -22,7 +22,7 @@
       :showTooltip="true"
       :tooltipFormatter="tooltipFormatter"
     />
-    
+
     <!-- 前三名统计信息 -->
     <div class="mt-4">
       <p class="text-sm text-gray-600 mb-3">Top 10热销产品，共 <span class="font-semibold">{{ totalCount }}</span> 件</p>
@@ -41,24 +41,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import ArtBarChart from '@/components/core/charts/art-bar-chart/index.vue'
+import { fetchSalesList } from '@/api/dashboard'
 
 const productFilter = ref('all')
 
-// 示例数据
-const productList = ref([
-  { name: 'SC43N12TFI8_C', model: 'SC43N12TFI8_C', count: 1250 },
-  { name: 'SF150R12A6H', model: 'SF150R12A6H', count: 980 },
-  { name: 'S3L450R12D6L_C20', model: 'S3L450R12D6L_C20', count: 765 },
-  { name: 'SC19N07TFI8_B', model: 'SC19N07TFI8_B', count: 654 },
-  { name: 'SC28N12TFI8_C', model: 'SC28N12TFI8_C', count: 543 },
-  { name: 'SF200R17E6', model: 'SF200R17E6', count: 432 },
-  { name: 'S3L150R07G6', model: 'S3L150R07G6', count: 321 },
-  { name: 'SD75R07A6U', model: 'SD75R07A6U', count: 210 },
-  { name: 'SF100R17A6', model: 'SF100R17A6', count: 198 },
-  { name: 'S3L450R12D6S_C20', model: 'S3L450R12D6S_C20', count: 165 }
-])
+interface ProductItem {
+  name: string
+  model: string
+  count: number
+}
+
+// 产品数据
+const productList = ref<ProductItem[]>([])
 
 // 图表数据（所有产品）
 const chartData = computed(() => {
@@ -95,17 +91,52 @@ const tooltipFormatter = computed(() => {
         const param = params[0]
         const index = param.dataIndex
         const product = productList.value[index]
-        return `
-          <div style="padding: 8px;">
-            <div style="font-weight: 600; margin-bottom: 4px;">${product.name}</div>
-            <div style="color: #666; font-size: 12px; margin-bottom: 2px;">型号: ${product.model}</div>
-            <div>销量: <span style="font-weight: 600; color: #409EFF;">${product.count}件</span></div>
-            <div style="color: #999; font-size: 12px; margin-top: 2px;">排名: TOP${index + 1}</div>
-          </div>
-        `
+        if (product) {
+          return `
+            <div style="padding: 8px;">
+              <div style="font-weight: 600; margin-bottom: 4px;">${product.name}</div>
+              <div style="color: #666; font-size: 12px; margin-bottom: 2px;">型号: ${product.model}</div>
+              <div>销量: <span style="font-weight: 600; color: #409EFF;">${product.count}件</span></div>
+              <div style="color: #999; font-size: 12px; margin-top: 2px;">排名: TOP${index + 1}</div>
+            </div>
+          `
+        }
       }
       return ''
     }
   }
+})
+
+// 获取产品数据
+const loadProductData = async () => {
+  try {
+    const res: any = await fetchSalesList({ current: 1, size: 100 })
+    if (res && res.code === 200 && res.data && res.data.records) {
+      // 按产品分组统计销量
+      const productMap = new Map<string, ProductItem>()
+      res.data.records.forEach((record: any) => {
+        const name = record.productName || '未知产品'
+        if (productMap.has(name)) {
+          productMap.get(name)!.count += record.quantity || 0
+        } else {
+          productMap.set(name, {
+            name: name,
+            model: name,
+            count: record.quantity || 0
+          })
+        }
+      })
+      // 排序并取前10
+      productList.value = Array.from(productMap.values())
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10)
+    }
+  } catch (error) {
+    console.error('Failed to load product data:', error)
+  }
+}
+
+onMounted(() => {
+  loadProductData()
 })
 </script>
