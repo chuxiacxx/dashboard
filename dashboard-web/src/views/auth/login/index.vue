@@ -114,7 +114,7 @@
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
   import { fetchLogin } from '@/api/auth'
-  import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
+  import { ElNotification, ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import { useSettingStore } from '@/store/modules/setting'
 
   defineOptions({ name: 'Login' })
@@ -220,33 +220,38 @@
       // 登录请求
       const { username, password } = formData
 
-      const { token, refreshToken } = await fetchLogin({
+      const res: any = await fetchLogin({
         userName: username,
         password
       })
 
-      // 验证token
-      if (!token) {
-        throw new Error('Login failed - no token received')
-      }
+      // 验证响应
+      if (res && res.code === 200) {
+        const { token, refreshToken } = res.data || {}
 
-      // 存储 token 和登录状态
-      userStore.setToken(token, refreshToken)
-      userStore.setLoginStatus(true)
+        if (!token) {
+          ElMessage.error('登录失败：未收到 token')
+          return
+        }
 
-      // 登录成功处理
-      showLoginSuccessNotice()
+        // 存储 token 和登录状态
+        userStore.setToken(token, refreshToken)
+        userStore.setLoginStatus(true)
 
-      // 获取 redirect 参数，如果存在则跳转到指定页面，否则跳转到首页
-      const redirect = route.query.redirect as string
-      router.push(redirect || '/')
-    } catch (error) {
-      // 处理 HttpError
-      if (error instanceof HttpError) {
-        // console.log(error.code)
+        // 登录成功处理
+        showLoginSuccessNotice()
+
+        // 获取 redirect 参数，如果存在则跳转到指定页面，否则跳转到首页
+        const redirect = route.query.redirect as string
+        router.push(redirect || '/')
       } else {
-        // 处理非 HttpError
-        // ElMessage.error('登录失败，请稍后重试')
+        ElMessage.error(res?.message || '登录失败')
+      }
+    } catch (error) {
+      if (error instanceof HttpError) {
+        ElMessage.error(error.message)
+      } else {
+        ElMessage.error('登录失败，请稍后重试')
         console.error('[Login] Unexpected error:', error)
       }
     } finally {

@@ -12,6 +12,6 @@ public interface SalesInvoiceRepository extends JpaRepository<SalesInvoice, Long
 
     List<SalesInvoice> findByInvoiceDateBetween(LocalDate start, LocalDate end);
 
-    @Query("SELECT COALESCE(SUM(i.amount), 0) FROM SalesInvoice i WHERE i.invoiceDate BETWEEN :start AND :end")
+    @Query(value = "SELECT COALESCE(SUM(i.amount), 0) FROM sales_invoice i WHERE i.invoice_date BETWEEN :start AND :end", nativeQuery = true)
     BigDecimal sumAmountByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
 }

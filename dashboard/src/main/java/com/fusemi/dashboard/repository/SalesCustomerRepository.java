@@ -11,7 +11,7 @@ public interface SalesCustomerRepository extends JpaRepository<SalesCustomer, Lo
 
     List<SalesCustomer> findByIsNew(Integer isNew);
 
-    @Query("SELECT COUNT(c) FROM SalesCustomer c WHERE c.isNew = :isNew AND c.firstPurchaseDate BETWEEN :start AND :end")
+    @Query(value = "SELECT COUNT(*) FROM sales_customer WHERE is_new = :isNew AND first_purchase_date BETWEEN :start AND :end", nativeQuery = true)
     Long countByIsNewAndDateRange(@Param("isNew") Integer isNew,
                                    @Param("start") LocalDate start,
                                    @Param("end") LocalDate end);

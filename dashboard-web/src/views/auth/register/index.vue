@@ -88,6 +88,8 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { fetchRegister } from '@/api/auth'
+  import { HttpError } from '@/utils/http/error'
 
   defineOptions({ name: 'Register' })
 
@@ -202,25 +204,21 @@
       await formRef.value.validate()
       loading.value = true
 
-      // TODO: 替换为真实 API 调用
-      // const params = {
-      //   username: formData.username,
-      //   password: formData.password
-      // }
-      // const res = await AuthService.register(params)
-      // if (res.code === ApiStatus.success) {
-      //   ElMessage.success('注册成功')
-      //   toLogin()
-      // }
-
-      // 模拟注册请求
-      setTimeout(() => {
-        loading.value = false
-        ElMessage.success('注册成功')
+      const params = {
+        username: formData.username,
+        password: formData.password
+      }
+      const res: any = await fetchRegister(params)
+      if (res && res.code === 200) {
+        ElMessage.success(res.message || '注册成功')
         toLogin()
-      }, REDIRECT_DELAY)
+      } else {
+        ElMessage.error((res && res.message) || '注册失败')
+      }
     } catch (error) {
-      console.error('表单验证失败:', error)
+      // HttpError 已在 http 层通过 ElMessage.error 显示错误
+      console.error('注册失败:', error)
+    } finally {
       loading.value = false
     }
   }

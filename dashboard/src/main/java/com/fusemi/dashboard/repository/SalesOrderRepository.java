@@ -14,9 +14,9 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
 
     List<SalesOrder> findBySalesperson(String salesperson);
 
-    @Query("SELECT COALESCE(SUM(o.amount), 0) FROM SalesOrder o WHERE o.orderDate BETWEEN :start AND :end")
+    @Query(value = "SELECT COALESCE(SUM(amount), 0) FROM sales_order WHERE order_date BETWEEN :start AND :end", nativeQuery = true)
     BigDecimal sumAmountByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
-    @Query("SELECT COUNT(o) FROM SalesOrder o WHERE o.orderDate BETWEEN :start AND :end")
+    @Query(value = "SELECT COUNT(*) FROM sales_order WHERE order_date BETWEEN :start AND :end", nativeQuery = true)
     Long countByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
 }

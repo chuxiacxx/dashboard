@@ -12,6 +12,6 @@ public interface SalesShipmentRepository extends JpaRepository<SalesShipment, Lo
 
     List<SalesShipment> findByShipmentDateBetween(LocalDate start, LocalDate end);
 
-    @Query("SELECT COALESCE(SUM(s.amount), 0) FROM SalesShipment s WHERE s.shipmentDate BETWEEN :start AND :end")
+    @Query(value = "SELECT COALESCE(SUM(s.amount), 0) FROM sales_shipment s WHERE s.shipment_date BETWEEN :start AND :end", nativeQuery = true)
     BigDecimal sumAmountByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
 }

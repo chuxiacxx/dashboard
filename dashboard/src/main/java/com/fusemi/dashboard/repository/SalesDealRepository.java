@@ -12,6 +12,6 @@ public interface SalesDealRepository extends JpaRepository<SalesDeal, Long> {
 
     List<SalesDeal> findByDealDateBetween(LocalDate start, LocalDate end);
 
-    @Query("SELECT COALESCE(SUM(d.amount), 0) FROM SalesDeal d WHERE d.dealDate BETWEEN :start AND :end")
+    @Query(value = "SELECT COALESCE(SUM(d.amount), 0) FROM sales_deal d WHERE d.deal_date BETWEEN :start AND :end", nativeQuery = true)
     BigDecimal sumAmountByDateRange(@Param("start") LocalDate start, @Param("end") LocalDate end);
 }

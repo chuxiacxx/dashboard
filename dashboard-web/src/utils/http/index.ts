@@ -36,6 +36,8 @@ let unauthorizedTimer: NodeJS.Timeout | null = null
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showErrorMessage?: boolean
   showSuccessMessage?: boolean
+  /** true=返回完整 {code,message,data} 响应对象，false=只返回 data（默认） */
+  raw?: boolean
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
@@ -83,12 +85,14 @@ axiosInstance.interceptors.request.use(
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
-    const { code, msg } = response.data
+    const { code, message } = response.data
+    console.log('[Response] status:', response.status, 'code:', code, 'message:', message)
     if (code === ApiStatus.success) return response
-    if (code === ApiStatus.unauthorized) handleUnauthorizedError(msg)
-    throw createHttpError(msg || $t('httpMsg.requestFailed'), code)
+    if (code === ApiStatus.unauthorized) handleUnauthorizedError(message)
+    throw createHttpError(message || $t('httpMsg.requestFailed'), code)
   },
   (error) => {
+    console.log('[Response Error] response:', error.response, 'status:', error.response?.status)
     if (error.response?.status === ApiStatus.unauthorized) handleUnauthorizedError()
     return Promise.reject(handleError(error))
   }
@@ -141,27 +145,6 @@ function shouldRetry(statusCode: number) {
   ].includes(statusCode)
 }
 
-/** 请求重试逻辑 */
-async function retryRequest<T>(
-  config: ExtendedAxiosRequestConfig,
-  retries: number = MAX_RETRIES
-): Promise<T> {
-  try {
-    return await request<T>(config)
-  } catch (error) {
-    if (retries > 0 && error instanceof HttpError && shouldRetry(error.code)) {
-      await delay(RETRY_DELAY)
-      return retryRequest<T>(config, retries - 1)
-    }
-    throw error
-  }
-}
-
-/** 延迟函数 */
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
 /** 请求函数 */
 async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> {
   // POST | PUT 参数自动填充
@@ -182,6 +165,11 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
       showSuccess(res.data.msg)
     }
 
+    // raw=true 时返回完整 {code, message, data} 响应体
+    if (config.raw) {
+      return res.data as T
+    }
+
     return res.data.data as T
   } catch (error) {
     if (error instanceof HttpError && error.code !== ApiStatus.unauthorized) {
@@ -190,6 +178,27 @@ async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> 
     }
     return Promise.reject(error)
   }
+}
+
+/** 请求重试逻辑 */
+async function retryRequest<T>(
+  config: ExtendedAxiosRequestConfig,
+  retries: number = MAX_RETRIES
+): Promise<T> {
+  try {
+    return await request<T>(config)
+  } catch (error) {
+    if (retries > 0 && error instanceof HttpError && shouldRetry(error.code)) {
+      await delay(RETRY_DELAY)
+      return retryRequest<T>(config, retries - 1)
+    }
+    throw error
+  }
+}
+
+/** 延迟函数 */
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 /** API方法集合 */

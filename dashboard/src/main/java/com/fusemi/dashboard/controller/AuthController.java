@@ -2,6 +2,7 @@ package com.fusemi.dashboard.controller;
 
 import com.fusemi.dashboard.common.Result;
 import com.fusemi.dashboard.dto.LoginDTO;
+import com.fusemi.dashboard.dto.RegisterDTO;
 import com.fusemi.dashboard.service.AuthService;
 import com.fusemi.dashboard.vo.LoginVO;
 import com.fusemi.dashboard.vo.UserInfoVO;
@@ -22,6 +23,11 @@ public class AuthController {
     @PostMapping("/auth/login")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO dto) {
         return authService.login(dto);
+    }
+
+    @PostMapping("/auth/register")
+    public Result<?> register(@Valid @RequestBody RegisterDTO dto) {
+        return authService.register(dto);
     }
 
     @GetMapping("/auth/userinfo")

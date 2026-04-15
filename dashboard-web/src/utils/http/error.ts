@@ -125,11 +125,12 @@ export function handleError(error: AxiosError<ErrorResponse>): never {
     throw new HttpError($t('httpMsg.requestCancelled'), ApiStatus.error)
   }
 
-  const statusCode = error.response?.status
-  const errorMessage = error.response?.data?.msg || error.message
+  const httpStatus = error.response?.status
+  const backendCode = error.response?.data?.code
+  const backendMessage = error.response?.data?.message || error.response?.data?.msg
   const requestConfig = error.config
 
-  // 处理网络错误
+  // 处理网络错误（无响应）
   if (!error.response) {
     throw new HttpError($t('httpMsg.networkError'), ApiStatus.error, {
       url: requestConfig?.url,
@@ -137,11 +138,19 @@ export function handleError(error: AxiosError<ErrorResponse>): never {
     })
   }
 
-  // 处理 HTTP 状态码错误
-  const message = statusCode
-    ? getErrorMessage(statusCode)
-    : errorMessage || $t('httpMsg.requestFailed')
-  throw new HttpError(message, statusCode || ApiStatus.error, {
+  // 优先使用后端返回的业务错误码和消息
+  if (backendCode != null) {
+    const msg = backendMessage || getErrorMessage(httpStatus!)
+    throw new HttpError(msg, backendCode, {
+      data: error.response.data,
+      url: requestConfig?.url,
+      method: requestConfig?.method?.toUpperCase()
+    })
+  }
+
+  // 处理 HTTP 状态码错误（无业务码时）
+  const message = httpStatus ? getErrorMessage(httpStatus) : $t('httpMsg.requestFailed')
+  throw new HttpError(message, httpStatus || ApiStatus.error, {
     data: error.response.data,
     url: requestConfig?.url,
     method: requestConfig?.method?.toUpperCase()
