@@ -1,0 +1,56 @@
+# ====================
+# Backend (dashboard - Java/Spring Boot)
+# ====================
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# STS
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# Gradle
+.gradle/
+build/
+
+# ====================
+# Frontend (dashboard-web - Vue/TypeScript)
+# ====================
+node_modules/
+dist/
+dist-ssr/
+*.local
+.cursorrules
+
+# Auto-generated type files
+src/types/import/auto-imports.d.ts
+src/types/import/components.d.ts
+.auto-import.json
+
+# ====================
+# Shared / IDE & Build
+# ====================
+.idea/
+*.iws
+*.iml
+*.ipr
+.DS_Store
+
+.vscode/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files — keep .env.example but ignore .env
+.env
+.env.local
+.env.*.local
