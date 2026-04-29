@@ -15,7 +15,7 @@
       <div class="max-w-4xl">
         <!-- 数据类型选择 -->
         <div class="mb-6">
-          <h4 class="text-base font-medium mb-3">选择数据类型</h4>
+          <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">选择数据类型</h4>
           <ElRadioGroup v-model="selectedType" size="large">
             <ElRadioButton
               v-for="item in importTypes"
@@ -29,7 +29,7 @@
 
         <!-- 文件上传区域 -->
         <div class="mb-6">
-          <h4 class="text-base font-medium mb-3">上传文件</h4>
+          <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">上传文件</h4>
           <ElUpload
             ref="uploadRef"
             class="upload-area"
@@ -53,9 +53,9 @@
         </div>
 
         <!-- 导入说明 -->
-        <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-          <h4 class="text-base font-medium mb-3">导入说明</h4>
-          <ul class="text-sm text-gray-600 space-y-1">
+        <div class="mb-6 import-info-box">
+          <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">导入说明</h4>
+          <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
             <li>1. 请先下载导入模板，确保数据格式正确</li>
             <li>2. Excel 文件需符合模板格式，第一行为表头</li>
             <li>3. CSV 文件请使用 UTF-8 编码，避免中文乱码</li>
@@ -66,7 +66,7 @@
 
         <!-- 下载模板 -->
         <div class="mb-6">
-          <h4 class="text-base font-medium mb-3">导入模板</h4>
+          <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">导入模板</h4>
           <div class="flex flex-wrap gap-2">
             <el-button
               v-for="item in importTypes"
@@ -105,9 +105,9 @@
             :description="importResult.message"
             show-icon
           />
-          <div v-if="importResult.data" class="mt-3 p-4 bg-gray-50 rounded-lg">
+          <div v-if="importResult.data" class="mt-3 import-result-box">
             <div class="flex gap-6 text-sm">
-              <span>总记录: <strong>{{ importResult.data.total }}</strong></span>
+              <span class="text-gray-800 dark:text-gray-200">总记录: <strong>{{ importResult.data.total }}</strong></span>
               <span class="text-green-600">成功: <strong>{{ importResult.data.success }}</strong></span>
               <span class="text-red-600">失败: <strong>{{ importResult.data.failed }}</strong></span>
             </div>
@@ -276,5 +276,39 @@ loadImportTypes()
 
 :deep(.el-radio-button__inner) {
   padding: 8px 16px;
+}
+
+/* 导入说明区域 - 使用 Element Plus 变量适配主题 */
+.import-info-box {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+/* 导入结果区域 */
+.import-result-box {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: var(--el-fill-color-light);
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+/* 确保文字在暗色主题下可见 */
+:deep(.el-card) {
+  --el-card-bg-color: var(--el-bg-color);
+}
+
+/* 上传区域文字颜色 */
+:deep(.el-upload__text) {
+  color: var(--el-text-color-regular);
+}
+
+:deep(.el-upload__text em) {
+  color: var(--el-color-primary);
+}
+
+:deep(.el-upload__tip) {
+  color: var(--el-text-color-secondary);
 }
 </style>
