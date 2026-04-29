@@ -11,7 +11,7 @@ export const dataImportRoutes: AppRouteRecord = {
   },
   children: [
     {
-      path: '',
+      path: 'index',
       name: 'DataImportPage',
       component: '/system/data-import',
       meta: {
