@@ -35,15 +35,12 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 公开接口
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 // 前端路由，静态资源
                 .requestMatchers("/**/*.html", "/**/*.js", "/**/*.css", "/**/*.ico", "/**/*.woff2").permitAll()
                 // 其他接口需要认证
                 .anyRequest().authenticated()
             )
-            // 允许 H2 Console 在 iframe 中显示
-            .headers(headers -> headers.frameOptions(frame -> frame.disable()))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -23,6 +23,7 @@ public class DataService {
     private final SalesShipmentRepository shipmentRepository;
     private final SalesOrderRepository orderRepository;
     private final SalesInvoiceRepository invoiceRepository;
+
     private final SalesDealRepository dealRepository;
     private final SalesCustomerRepository customerRepository;
 

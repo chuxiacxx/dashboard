@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class DashboardApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(DashboardApplication.class, args);
+        SpringApplication app = new SpringApplication(DashboardApplication.class);
+        app.setAdditionalProfiles("local");
+        app.run(args);
     }
 
 }

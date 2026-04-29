@@ -2,13 +2,14 @@ package com.fusemi.dashboard.controller;
 
 import com.fusemi.dashboard.common.Result;
 import com.fusemi.dashboard.dto.LoginDTO;
-import com.fusemi.dashboard.dto.RegisterDTO;
 import com.fusemi.dashboard.service.AuthService;
 import com.fusemi.dashboard.vo.LoginVO;
 import com.fusemi.dashboard.vo.UserInfoVO;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -25,11 +26,6 @@ public class AuthController {
         return authService.login(dto);
     }
 
-    @PostMapping("/auth/register")
-    public Result<?> register(@Valid @RequestBody RegisterDTO dto) {
-        return authService.register(dto);
-    }
-
     @GetMapping("/auth/userinfo")
     public Result<UserInfoVO> getUserInfo(Authentication authentication) {
         String username = authentication.getName();
@@ -44,5 +40,20 @@ public class AuthController {
     @GetMapping("/user/info")
     public Result<UserInfoVO> getUserInfoAlt(Authentication authentication) {
         return getUserInfo(authentication);
+    }
+
+    @PutMapping("/auth/password")
+    public Result<?> changePassword(Authentication authentication,
+                                     @RequestParam String oldPassword,
+                                     @RequestParam String newPassword) {
+        String username = authentication.getName();
+        return authService.changePassword(username, oldPassword, newPassword);
+    }
+
+    @PutMapping("/auth/userinfo")
+    public Result<?> updateUserInfo(Authentication authentication,
+                                     @RequestBody Map<String, String> params) {
+        String username = authentication.getName();
+        return authService.updateUserInfo(username, params);
     }
 }

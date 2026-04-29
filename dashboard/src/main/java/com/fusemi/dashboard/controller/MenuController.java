@@ -20,8 +20,9 @@ public class MenuController {
         this.menuService = menuService;
     }
 
-    /** 前端 /api/v3/system/menus/simple */
+    /** 前端 /api/v3/system/menus/simple - 返回所有菜单（前端模式自行过滤） */
     @GetMapping("/v3/system/menus/simple")
+    @PreAuthorize("isAuthenticated()")
     public Result<List<MenuTreeVO>> getMenuSimple() {
         return Result.ok(menuService.getMenuTree());
     }
@@ -29,7 +30,7 @@ public class MenuController {
     @GetMapping("/menu/tree")
     @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN')")
     public Result<List<MenuTreeVO>> getMenuTree() {
-        return Result.ok(menuService.getAllMenuTree());
+        return Result.ok(menuService.getMenuTree());
     }
 
     @PostMapping("/menu")
@@ -40,7 +41,7 @@ public class MenuController {
 
     @PutMapping("/menu/{id}")
     @PreAuthorize("hasRole('R_SUPER')")
-    public Result<?> updateMenu(@PathVariable Long id, @RequestBody MenuDTO dto) {
+    public Result<?> updateMenu(@PathVariable Long id, @Valid @RequestBody MenuDTO dto) {
         dto.setId(id);
         return menuService.updateMenu(dto);
     }

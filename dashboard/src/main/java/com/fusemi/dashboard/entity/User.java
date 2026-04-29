@@ -23,6 +23,8 @@ public class User extends BaseEntity {
 
     private String phone;
 
+    private String gender;
+
     private String avatar;
 
     /** 0=正常, 1=禁用 */
