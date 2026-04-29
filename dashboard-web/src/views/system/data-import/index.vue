@@ -1,6 +1,7 @@
 <!-- 数据导入页面 -->
 <template>
   <div class="data-import-page art-full-height p-5">
+    <!-- 文件上传 -->
     <ElCard class="art-table-card" shadow="never">
       <template #header>
         <div class="flex justify-between items-center">
@@ -27,60 +28,28 @@
           </ElRadioGroup>
         </div>
 
-        <!-- 文件上传和导入说明 - 水平布局 -->
-        <div class="flex gap-6 mb-6">
-          <!-- 文件上传区域 -->
-          <div class="flex-1">
-            <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">上传文件</h4>
-            <ElUpload
-              ref="uploadRef"
-              class="upload-area"
-              drag
-              :auto-upload="false"
-              :limit="1"
-              :accept="acceptTypes"
-              :on-change="handleFileChange"
-              :on-remove="handleFileRemove"
-            >
-              <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-              <div class="el-upload__text">
-                将文件拖到此处，或 <em>点击上传</em>
-              </div>
-              <template #tip>
-                <div class="el-upload__tip">
-                  支持 {{ selectedTypeInfo?.extensions || '.xlsx, .xls, .csv' }} 格式，文件大小不超过 10MB
-                </div>
-              </template>
-            </ElUpload>
-          </div>
-
-          <!-- 导入说明 -->
-          <div class="w-80 import-info-box">
-            <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">导入说明</h4>
-            <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-              <li>1. 请先下载导入模板，确保数据格式正确</li>
-              <li>2. Excel 文件需符合模板格式，第一行为表头</li>
-              <li>3. CSV 文件请使用 UTF-8 编码，避免中文乱码</li>
-              <li>4. 导入过程中请勿关闭页面</li>
-              <li>5. 导入完成后可在数据列表中查看导入结果</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- 下载模板 -->
+        <!-- 文件上传区域 -->
         <div class="mb-6">
-          <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">导入模板</h4>
-          <div class="flex flex-wrap gap-2">
-            <el-button
-              v-for="item in importTypes"
-              :key="item.type"
-              size="small"
-              @click="downloadTemplate(item.type)"
-            >
-              <Download class="mr-1" />
-              下载 {{ item.name }} 模板
-            </el-button>
-          </div>
+          <ElUpload
+            ref="uploadRef"
+            class="upload-area"
+            drag
+            :auto-upload="false"
+            :limit="1"
+            :accept="acceptTypes"
+            :on-change="handleFileChange"
+            :on-remove="handleFileRemove"
+          >
+            <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+            <div class="el-upload__text">
+              将文件拖到此处，或 <em>点击上传</em>
+            </div>
+            <template #tip>
+              <div class="el-upload__tip">
+                支持 {{ selectedTypeInfo?.extensions || '.xlsx, .xls, .csv' }} 格式，文件大小不超过 10MB
+              </div>
+            </template>
+          </ElUpload>
         </div>
 
         <!-- 操作按钮 -->
@@ -125,7 +94,7 @@
       </div>
     </ElCard>
 
-    <!-- 历史导入记录 -->
+    <!-- 导入记录 -->
     <ElCard class="art-table-card mt-5" shadow="never">
       <template #header>
         <h3 class="text-lg font-medium">导入记录</h3>
@@ -138,8 +107,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { UploadFilled, Upload, Download, Refresh } from '@element-plus/icons-vue'
-import { fetchImportTypes, fetchImportData, fetchImportTemplate } from '@/api/dashboard'
+import { UploadFilled, Upload, Refresh } from '@element-plus/icons-vue'
+import { fetchImportTypes, fetchImportData } from '@/api/dashboard'
 
 defineOptions({ name: 'DataImport' })
 
@@ -198,25 +167,6 @@ const handleFileChange = (file: any) => {
 const handleFileRemove = () => {
   selectedFile.value = null
   importResult.value = null
-}
-
-// 下载模板
-const downloadTemplate = async (type: string) => {
-  try {
-    const res: any = await fetchImportTemplate(type)
-    const blob = new Blob([res], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${type}_template.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    ElMessage.success('模板下载成功')
-  } catch (error) {
-    ElMessage.error('模板下载失败')
-  }
 }
 
 // 开始导入
@@ -279,14 +229,6 @@ loadImportTypes()
 
 :deep(.el-radio-button__inner) {
   padding: 8px 16px;
-}
-
-/* 导入说明区域 - 使用 Element Plus 变量适配主题 */
-.import-info-box {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  background-color: var(--el-fill-color-light);
-  border: 1px solid var(--el-border-color-lighter);
 }
 
 /* 导入结果区域 */
