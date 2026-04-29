@@ -27,41 +27,44 @@
           </ElRadioGroup>
         </div>
 
-        <!-- 文件上传区域 -->
-        <div class="mb-6">
-          <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">上传文件</h4>
-          <ElUpload
-            ref="uploadRef"
-            class="upload-area"
-            drag
-            :auto-upload="false"
-            :limit="1"
-            :accept="acceptTypes"
-            :on-change="handleFileChange"
-            :on-remove="handleFileRemove"
-          >
-            <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
-            <div class="el-upload__text">
-              将文件拖到此处，或 <em>点击上传</em>
-            </div>
-            <template #tip>
-              <div class="el-upload__tip">
-                支持 {{ selectedTypeInfo?.extensions || '.xlsx, .xls, .csv' }} 格式，文件大小不超过 10MB
+        <!-- 文件上传和导入说明 - 水平布局 -->
+        <div class="flex gap-6 mb-6">
+          <!-- 文件上传区域 -->
+          <div class="flex-1">
+            <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">上传文件</h4>
+            <ElUpload
+              ref="uploadRef"
+              class="upload-area"
+              drag
+              :auto-upload="false"
+              :limit="1"
+              :accept="acceptTypes"
+              :on-change="handleFileChange"
+              :on-remove="handleFileRemove"
+            >
+              <el-icon class="el-icon--upload"><UploadFilled /></el-icon>
+              <div class="el-upload__text">
+                将文件拖到此处，或 <em>点击上传</em>
               </div>
-            </template>
-          </ElUpload>
-        </div>
+              <template #tip>
+                <div class="el-upload__tip">
+                  支持 {{ selectedTypeInfo?.extensions || '.xlsx, .xls, .csv' }} 格式，文件大小不超过 10MB
+                </div>
+              </template>
+            </ElUpload>
+          </div>
 
-        <!-- 导入说明 -->
-        <div class="mb-6 import-info-box">
-          <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">导入说明</h4>
-          <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
-            <li>1. 请先下载导入模板，确保数据格式正确</li>
-            <li>2. Excel 文件需符合模板格式，第一行为表头</li>
-            <li>3. CSV 文件请使用 UTF-8 编码，避免中文乱码</li>
-            <li>4. 导入过程中请勿关闭页面</li>
-            <li>5. 导入完成后可在数据列表中查看导入结果</li>
-          </ul>
+          <!-- 导入说明 -->
+          <div class="w-80 import-info-box">
+            <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">导入说明</h4>
+            <ul class="text-sm text-gray-600 dark:text-gray-300 space-y-1">
+              <li>1. 请先下载导入模板，确保数据格式正确</li>
+              <li>2. Excel 文件需符合模板格式，第一行为表头</li>
+              <li>3. CSV 文件请使用 UTF-8 编码，避免中文乱码</li>
+              <li>4. 导入过程中请勿关闭页面</li>
+              <li>5. 导入完成后可在数据列表中查看导入结果</li>
+            </ul>
+          </div>
         </div>
 
         <!-- 下载模板 -->
