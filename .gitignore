@@ -54,3 +54,4 @@ pnpm-debug.log*
 .env
 .env.local
 .env.*.local
+原始数据/
