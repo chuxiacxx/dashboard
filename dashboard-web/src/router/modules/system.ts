@@ -42,18 +42,13 @@ export const systemRoutes: AppRouteRecord = {
       }
     },
     {
-      path: 'menu',
-      name: 'Menus',
-      component: '/system/menu',
+      path: 'sales-target',
+      name: 'SalesTarget',
+      component: '/system/sales-target',
       meta: {
-        title: 'menus.system.menu',
+        title: '销售目标配置',
         keepAlive: true,
-        roles: ['R_SUPER'],
-        authList: [
-          { title: '新增', authMark: 'add' },
-          { title: '编辑', authMark: 'edit' },
-          { title: '删除', authMark: 'delete' }
-        ]
+        roles: ['R_SUPER']
       }
     }
   ]

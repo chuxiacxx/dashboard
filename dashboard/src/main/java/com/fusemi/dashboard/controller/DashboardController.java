@@ -19,7 +19,7 @@ public class DashboardController {
     }
 
     @GetMapping("/dashboard/summary")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_USER', 'R_SALES')")
     public Result<DashboardSummaryVO> getSummary() {
         return Result.ok(dashboardService.getSummary());
     }

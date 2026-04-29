@@ -29,7 +29,7 @@
  * - 登出时自动清理
  *
  * @module store/modules/user
- * @author Art Design Pro Team
+
  */
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
@@ -162,10 +162,12 @@ export const useUserStore = defineStore(
       // 注意：不清空工作台标签页，等下次登录时根据用户判断
       // 移除iframe路由缓存
       sessionStorage.removeItem('iframeRoutes')
+      // 立即清空菜单列表，确保后续guard能正确重新初始化
+      useMenuStore().setMenuList([])
       // 清空主页路径
       useMenuStore().setHomePath('')
-      // 重置路由状态
-      resetRouterState(500)
+      // 立即重置路由注册状态，确保新用户登录时能重新注册路由
+      resetRouterState(0)
       // 跳转到登录页，携带当前路由作为 redirect 参数
       const currentRoute = router.currentRoute.value
       const redirect = currentRoute.path !== '/login' ? currentRoute.fullPath : undefined

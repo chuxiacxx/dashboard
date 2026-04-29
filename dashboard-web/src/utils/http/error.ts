@@ -19,7 +19,7 @@
  * - 错误日志收集和上报
  *
  * @module utils/http/error
- * @author Art Design Pro Team
+
  */
 import { AxiosError } from 'axios'
 import { ApiStatus } from './status'
@@ -31,6 +31,8 @@ export interface ErrorResponse {
   code: number
   /** 错误消息 */
   msg: string
+  /** 错误消息（兼容） */
+  message?: string
   /** 错误附加数据 */
   data?: unknown
 }

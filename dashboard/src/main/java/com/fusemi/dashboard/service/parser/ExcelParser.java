@@ -9,7 +9,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class ExcelParser implements DataParser {
@@ -22,46 +27,88 @@ public class ExcelParser implements DataParser {
         try (InputStream is = file.getInputStream();
              Workbook workbook = isXlsx ? new XSSFWorkbook(is) : new HSSFWorkbook(is)) {
 
-            Sheet sheet = workbook.getSheetAt(0);
-            Iterator<Row> rowIterator = sheet.iterator();
+            return parseSheet(workbook.getSheetAt(0));
+        }
+    }
 
-            if (!rowIterator.hasNext()) {
-                return DataRow.builder()
-                        .headers(Collections.emptyList())
-                        .rows(Collections.emptyList())
-                        .rowCount(0)
-                        .build();
+    /**
+     * 解析单个 Sheet
+     */
+    private DataRow parseSheet(Sheet sheet) {
+        Iterator<Row> rowIterator = sheet.iterator();
+
+        if (!rowIterator.hasNext()) {
+            return DataRow.builder()
+                    .headers(Collections.emptyList())
+                    .rows(Collections.emptyList())
+                    .rowCount(0)
+                    .build();
+        }
+
+        // 读取表头（第一行）
+        Row headerRow = rowIterator.next();
+        List<String> headers = new ArrayList<>();
+        for (Cell cell : headerRow) {
+            headers.add(getCellValue(cell).trim());
+        }
+
+        // 读取数据行
+        List<Map<String, String>> rows = new ArrayList<>();
+        while (rowIterator.hasNext()) {
+            Row row = rowIterator.next();
+            // 跳过空行
+            if (isEmptyRow(row, headers.size())) {
+                continue;
             }
 
-            // 读取表头（第一行）
-            Row headerRow = rowIterator.next();
-            List<String> headers = new ArrayList<>();
-            for (Cell cell : headerRow) {
-                headers.add(getCellValue(cell).trim());
+            Map<String, String> rowData = new LinkedHashMap<>();
+            for (int i = 0; i < headers.size(); i++) {
+                Cell cell = row.getCell(i, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                String value = cell != null ? getCellValue(cell).trim() : "";
+                rowData.put(headers.get(i), value);
             }
+            rows.add(rowData);
+        }
 
-            // 读取数据行
-            List<Map<String, String>> rows = new ArrayList<>();
-            while (rowIterator.hasNext()) {
-                Row row = rowIterator.next();
-                // 跳过空行
-                if (isEmptyRow(row, headers.size())) {
-                    continue;
-                }
+        return DataRow.builder()
+                .headers(headers)
+                .rows(rows)
+                .rowCount(rows.size())
+                .build();
+    }
 
-                Map<String, String> rowData = new LinkedHashMap<>();
-                for (int i = 0; i < headers.size(); i++) {
-                    Cell cell = row.getCell(i, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-                    String value = cell != null ? getCellValue(cell).trim() : "";
-                    rowData.put(headers.get(i), value);
+    /**
+     * 解析多个 Sheet（用于包含 Sheet1 + Sheet2 的订单数据）
+     */
+    public DataRow parseMultipleSheets(MultipartFile file) throws IOException {
+        String filename = file.getOriginalFilename();
+        boolean isXlsx = filename != null && filename.toLowerCase().endsWith(".xlsx");
+
+        try (InputStream is = file.getInputStream();
+             Workbook workbook = isXlsx ? new XSSFWorkbook(is) : new HSSFWorkbook(is)) {
+
+            List<Map<String, String>> allRows = new ArrayList<>();
+            List<String> headers = null;
+
+            // 遍历所有 Sheet
+            for (int i = 0; i < workbook.getNumberOfSheets(); i++) {
+                Sheet sheet = workbook.getSheetAt(i);
+                DataRow sheetData = parseSheet(sheet);
+
+                if (sheetData.getHeaders() != null && !sheetData.getHeaders().isEmpty()) {
+                    if (headers == null) {
+                        headers = sheetData.getHeaders();
+                    }
+                    if (sheetData.getRows() != null) {
+                        allRows.addAll(sheetData.getRows());
+                    }
                 }
-                rows.add(rowData);
             }
 
             return DataRow.builder()
-                    .headers(headers)
-                    .rows(rows)
-                    .rowCount(rows.size())
+                    .headers(headers != null ? headers : Collections.emptyList())
+                    .rows(allRows)
+                    .rowCount(allRows.size())
                     .build();
         }
     }

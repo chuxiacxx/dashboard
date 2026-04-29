@@ -1,7 +1,7 @@
 <template>
   <ElRow :gutter="20" class="flex">
     <!-- 1. 目标销售额与实际销售额 -->
-    <ElCol :sm="12" :md="8" :lg="4">
+    <ElCol :xs="24" :sm="12" :md="6">
       <div class="art-card relative flex flex-col h-60 px-5 py-6 mb-5 max-sm:mb-4" @click="handleCardClick('SalesDetails')">
         <div class="flex justify-between items-center mb-4">
           <div class="flex items-center">
@@ -35,7 +35,7 @@
     </ElCol>
 
     <!-- 2. 本月出货金额 -->
-    <ElCol :sm="12" :md="8" :lg="4">
+    <ElCol :xs="24" :sm="12" :md="6">
       <div class="art-card relative flex flex-col h-60 px-5 py-6 mb-5 max-sm:mb-4" @click="handleCardClick('ShipmentDetails')">
         <div class="flex justify-between items-center mb-4">
           <span class="text-g-700 text-sm">出货金额</span>
@@ -50,16 +50,17 @@
         </div>
 
         <div class="flex-c mt-auto">
-          <span class="text-xs text-g-600">较上周</span>
-          <span class="ml-1 text-xs font-semibold text-success">
-            <ArtSvgIcon icon="ri:arrow-up-line" class="mr-1 inline" />+12.5%
+          <span class="text-xs text-g-600">较上月</span>
+          <span class="ml-1 text-xs font-semibold" :class="getGrowthClass(summary.shipmentGrowthRate)">
+            <ArtSvgIcon :icon="getGrowthIcon(summary.shipmentGrowthRate)" class="mr-1 inline" />
+            {{ formatGrowthRate(summary.shipmentGrowthRate) }}
           </span>
         </div>
       </div>
     </ElCol>
 
     <!-- 3. 总新增订单金额 -->
-    <ElCol :sm="12" :md="8" :lg="4">
+    <ElCol :xs="24" :sm="12" :md="6">
       <div class="art-card relative flex flex-col h-60 px-5 py-6 mb-5 max-sm:mb-4" @click="handleCardClick('OrderDetails')">
         <div class="flex justify-between items-center mb-4">
           <span class="text-g-700 text-sm">新增订单</span>
@@ -79,16 +80,17 @@
         </div>
 
         <div class="flex-c mt-auto">
-          <span class="text-xs text-g-600">较上周</span>
-          <span class="ml-1 text-xs font-semibold text-success">
-            <ArtSvgIcon icon="ri:arrow-up-line" class="mr-1 inline" />+8.3%
+          <span class="text-xs text-g-600">较上月</span>
+          <span class="ml-1 text-xs font-semibold" :class="getGrowthClass(summary.orderGrowthRate)">
+            <ArtSvgIcon :icon="getGrowthIcon(summary.orderGrowthRate)" class="mr-1 inline" />
+            {{ formatGrowthRate(summary.orderGrowthRate) }}
           </span>
         </div>
       </div>
     </ElCol>
 
     <!-- 4. 开票金额 -->
-    <ElCol :sm="12" :md="8" :lg="4">
+    <ElCol :xs="24" :sm="12" :md="6">
       <div class="art-card relative flex flex-col h-60 px-5 py-6 mb-5 max-sm:mb-4" @click="handleCardClick('InvoiceDetails')">
         <div class="flex justify-between items-center mb-4">
           <span class="text-g-700 text-sm">开票金额</span>
@@ -103,63 +105,11 @@
         </div>
 
         <div class="flex-c mt-auto">
-          <span class="text-xs text-g-600">较上周</span>
-          <span class="ml-1 text-xs font-semibold text-danger">
-            <ArtSvgIcon icon="ri:arrow-down-line" class="mr-1 inline" />-3.2%
+          <span class="text-xs text-g-600">较上月</span>
+          <span class="ml-1 text-xs font-semibold" :class="getGrowthClass(summary.invoiceGrowthRate)">
+            <ArtSvgIcon :icon="getGrowthIcon(summary.invoiceGrowthRate)" class="mr-1 inline" />
+            {{ formatGrowthRate(summary.invoiceGrowthRate) }}
           </span>
-        </div>
-      </div>
-    </ElCol>
-
-    <!-- 5. 本月成交额 -->
-    <ElCol :sm="12" :md="8" :lg="4">
-      <div class="art-card relative flex flex-col h-60 px-5 py-6 mb-5 max-sm:mb-4" @click="handleCardClick('DealDetails')">
-        <div class="flex justify-between items-center mb-4">
-          <span class="text-g-700 text-sm">本月成交额</span>
-          <div class="size-12.5 rounded-xl flex-cc bg-cyan-100">
-            <ArtSvgIcon icon="ri:exchange-dollar-line" class="text-xl text-cyan-500" />
-          </div>
-        </div>
-
-        <div class="flex items-end mb-3">
-          <ArtCountTo class="text-[26px] font-medium" :target="Number(summary.dealAmount) || 0" :duration="1300" prefix="¥" />
-        </div>
-
-        <div class="flex-c mt-auto">
-          <span class="text-xs text-g-600">较上周</span>
-          <span class="ml-1 text-xs font-semibold text-success">
-            <ArtSvgIcon icon="ri:arrow-up-line" class="mr-1 inline" />+15.7%
-          </span>
-        </div>
-      </div>
-    </ElCol>
-
-    <!-- 6. 新老客户成交占比 -->
-    <ElCol :sm="12" :md="8" :lg="4">
-      <div class="art-card relative flex flex-col h-60 px-5 py-6 mb-5 max-sm:mb-4" @click="handleCardClick('CustomerDetails')">
-        <div class="flex justify-between items-center mb-4">
-          <span class="text-g-700 text-sm">新老客户成交占比</span>
-          <div class="size-12.5 rounded-xl flex-cc bg-indigo-100">
-            <ArtSvgIcon icon="ri:user-heart-line" class="text-xl text-indigo-500" />
-          </div>
-        </div>
-
-        <div class="flex justify-between mb-4">
-          <div class="text-center flex-1">
-            <div class="text-xs text-g-600 mb-1">新客户</div>
-            <div class="text-lg font-semibold text-blue-500">{{ newCustomerPercent }}%</div>
-          </div>
-          <div class="text-center flex-1">
-            <div class="text-xs text-g-600 mb-1">老客户</div>
-            <div class="text-lg font-semibold text-amber-500">{{ oldCustomerPercent }}%</div>
-          </div>
-        </div>
-
-        <div class="mt-auto">
-          <div class="h-2 w-full bg-g-200 rounded-full overflow-hidden flex">
-            <div class="h-full bg-blue-400" :style="{ width: newCustomerPercent + '%' }"></div>
-            <div class="h-full bg-amber-400" :style="{ width: oldCustomerPercent + '%' }"></div>
-          </div>
         </div>
       </div>
     </ElCol>
@@ -167,7 +117,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { fetchDashboardSummary } from '@/api/dashboard'
 
@@ -179,11 +129,12 @@ interface DashboardSummary {
   orderAmount: number
   orderCount: number
   invoiceAmount: number
-  dealAmount: number
-  newCustomerCount: number
-  oldCustomerCount: number
   salesTarget: number
   salesCompletionRate: number
+  salesGrowthRate: number
+  shipmentGrowthRate: number
+  orderGrowthRate: number
+  invoiceGrowthRate: number
 }
 
 const summary = ref<DashboardSummary>({
@@ -192,11 +143,12 @@ const summary = ref<DashboardSummary>({
   orderAmount: 0,
   orderCount: 0,
   invoiceAmount: 0,
-  dealAmount: 0,
-  newCustomerCount: 0,
-  oldCustomerCount: 0,
-  salesTarget: 1200000,
-  salesCompletionRate: 0
+  salesTarget: 0,
+  salesCompletionRate: 0,
+  salesGrowthRate: 0,
+  shipmentGrowthRate: 0,
+  orderGrowthRate: 0,
+  invoiceGrowthRate: 0
 })
 
 // 格式化金额显示
@@ -205,16 +157,23 @@ const formatAmount = (amount: number) => {
   return (amount / 10000).toFixed(2) + '万'
 }
 
-// 计算新老客户百分比
-const totalCustomers = computed(() => summary.value.newCustomerCount + summary.value.oldCustomerCount)
-const newCustomerPercent = computed(() => {
-  if (totalCustomers.value === 0) return 42
-  return Math.round((summary.value.newCustomerCount / totalCustomers.value) * 100)
-})
-const oldCustomerPercent = computed(() => {
-  if (totalCustomers.value === 0) return 58
-  return 100 - newCustomerPercent.value
-})
+// 格式化增长率
+const formatGrowthRate = (rate: number) => {
+  if (!rate) return '0%'
+  const sign = rate >= 0 ? '+' : ''
+  return `${sign}${rate.toFixed(1)}%`
+}
+
+// 获取增长样式类
+const getGrowthClass = (rate: number) => {
+  if (!rate) return 'text-gray-500'
+  return rate >= 0 ? 'text-success' : 'text-danger'
+}
+
+// 获取增长图标
+const getGrowthIcon = (rate: number) => {
+  return rate >= 0 ? 'ri:arrow-up-line' : 'ri:arrow-down-line'
+}
 
 // 获取仪表盘数据
 const loadDashboardData = async () => {

@@ -70,12 +70,13 @@
         <!-- Logo、系统名称 -->
         <div
           class="header"
+          :class="{ 'header-collapsed': !menuOpen || isDualMenu }"
           @click="navigateToHome"
           :style="{
             background: getMenuTheme.background
           }"
         >
-          <ArtLogo v-if="!isDualMenu" class="logo" />
+          <ArtLogo v-show="!isDualMenu && menuOpen" class="logo" />
 
           <p
             :class="{ 'is-dual-menu-name': isDualMenu }"

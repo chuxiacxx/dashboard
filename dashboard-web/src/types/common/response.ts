@@ -16,7 +16,7 @@
  * - 响应数据解析
  *
  * @module types/common/response
- * @author Art Design Pro Team
+
  */
 
 /** 基础 API 响应结构 */
@@ -24,7 +24,9 @@ export interface BaseResponse<T = unknown> {
   /** 状态码 */
   code: number
   /** 消息 */
-  msg: string
+  msg?: string
+  /** 错误消息（兼容） */
+  message?: string
   /** 数据 */
   data: T
 }

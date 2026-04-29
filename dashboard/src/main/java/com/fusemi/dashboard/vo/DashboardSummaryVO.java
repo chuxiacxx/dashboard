@@ -28,4 +28,12 @@ public class DashboardSummaryVO {
     private BigDecimal salesTarget;
     /** 销售完成率 */
     private BigDecimal salesCompletionRate;
+    /** 销售额环比增长率 */
+    private BigDecimal salesGrowthRate;
+    /** 出货环比增长率 */
+    private BigDecimal shipmentGrowthRate;
+    /** 订单环比增长率 */
+    private BigDecimal orderGrowthRate;
+    /** 开票环比增长率 */
+    private BigDecimal invoiceGrowthRate;
 }

@@ -150,8 +150,8 @@
   },
   "login": {
     "leftView": {
-      "title": "一款兼具设计美学与高效开发的后台系统",
-      "subTitle": "美观实用的界面，经过视觉优化，确保卓越的用户体验"
+      "title": "森未科技销售看板",
+      "subTitle": "森未科技 - 销售数据可视化管理系统"
     },
     "title": "欢迎回来",
     "subTitle": "输入您的账号和密码登录",
@@ -168,42 +168,11 @@
     "sliderText": "按住滑块拖动",
     "sliderSuccessText": "验证成功",
     "rememberPwd": "记住密码",
-    "forgetPwd": "忘记密码",
     "btnText": "登录",
-    "noAccount": "还没有账号？",
-    "register": "注册",
     "success": {
       "title": "登录成功",
       "message": "欢迎回来"
     }
-  },
-  "forgetPassword": {
-    "title": "忘记密码？",
-    "subTitle": "输入您的电子邮件来重置您的密码",
-    "placeholder": "请输入您的电子邮件",
-    "submitBtnText": "提交",
-    "backBtnText": "返回"
-  },
-  "register": {
-    "title": "创建账号",
-    "subTitle": "欢迎加入我们，请填写以下信息完成注册",
-    "placeholder": {
-      "username": "请输入账号",
-      "password": "请输入密码",
-      "confirmPassword": "请再次输入密码"
-    },
-    "rule": {
-      "confirmPasswordRequired": "请再次输入密码",
-      "passwordMismatch": "两次输入密码不一致!",
-      "usernameLength": "长度在 3 到 20 个字符",
-      "passwordLength": "密码长度不能小于6位",
-      "agreementRequired": "请同意隐私协议"
-    },
-    "agreeText": "我同意",
-    "privacyPolicy": "《隐私政策》",
-    "submitBtnText": "注册",
-    "hasAccount": "已有账号？",
-    "toLogin": "去登录"
   },
   "lockScreen": {
     "pwdError": "密码错误",
@@ -233,18 +202,21 @@
     "login": {
       "title": "登录"
     },
-    "register": {
-      "title": "注册"
-    },
-    "forgetPassword": {
-      "title": "忘记密码"
-    },
     "outside": {
       "title": "内嵌页面"
     },
     "dashboard": {
       "title": "仪表盘",
       "console": "工作台"
+    },
+    "analysis": {
+      "title": "数据分析",
+      "customer": "客户分析",
+      "product": "产品分析",
+      "salesperson": "销售员业绩",
+      "orderTracking": "订单跟踪",
+      "finance": "财务分析",
+      "region": "地区热力图"
     },
     "result": {
       "title": "结果页面",
@@ -262,7 +234,10 @@
       "user": "用户管理",
       "role": "角色管理",
       "userCenter": "个人中心",
-      "menu": "菜单管理"
+      "salesTarget": "销售目标配置"
+    },
+    "dataImport": {
+      "title": "数据导入"
     }
   },
   "table": {

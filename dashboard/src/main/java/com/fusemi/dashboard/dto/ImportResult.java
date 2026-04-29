@@ -26,4 +26,10 @@ public class ImportResult {
 
     /** 文件名 */
     private String fileName;
+
+    /** 新建记录数 */
+    private int created;
+
+    /** 更新记录数 */
+    private int updated;
 }

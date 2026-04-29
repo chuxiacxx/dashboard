@@ -11,7 +11,7 @@
  * - 支持 GET/POST/PUT/DELETE 等常用方法
  *
  * @module utils/http
- * @author Art Design Pro Team
+
  */
 
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
@@ -88,15 +88,19 @@ axiosInstance.interceptors.request.use(
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
-    const { code, message } = response.data
-    console.log('[Response] status:', response.status, 'code:', code, 'message:', message)
+    const { code, message, msg } = response.data
+    const msgText = message || msg
+    console.log('[Response] status:', response.status, 'code:', code, 'message:', msgText)
     if (code === ApiStatus.success) return response
-    if (code === ApiStatus.unauthorized) handleUnauthorizedError(message)
-    throw createHttpError(message || $t('httpMsg.requestFailed'), code)
+    if (code === ApiStatus.unauthorized) handleUnauthorizedError(msgText)
+    if (code === ApiStatus.forbidden) handleForbiddenError(msgText)
+    throw createHttpError(msgText || $t('httpMsg.requestFailed'), code)
   },
   (error) => {
     console.log('[Response Error] response:', error.response, 'status:', error.response?.status)
-    if (error.response?.status === ApiStatus.unauthorized) handleUnauthorizedError()
+    const status = error.response?.status
+    if (status === ApiStatus.unauthorized) handleUnauthorizedError()
+    if (status === ApiStatus.forbidden) handleForbiddenError()
     return Promise.reject(handleError(error))
   }
 )
@@ -128,6 +132,19 @@ function resetUnauthorizedError() {
   isUnauthorizedErrorShown = false
   if (unauthorizedTimer) clearTimeout(unauthorizedTimer)
   unauthorizedTimer = null
+}
+
+/** 处理403错误 */
+function handleForbiddenError(message?: string): never {
+  // 使用防抖避免重复处理
+  if (!isUnauthorizedErrorShown) {
+    isUnauthorizedErrorShown = true
+    const error = createHttpError(message || $t('httpMsg.forbidden'), ApiStatus.forbidden)
+    logOut()
+    unauthorizedTimer = setTimeout(resetUnauthorizedError, UNAUTHORIZED_DEBOUNCE_TIME)
+    throw error
+  }
+  throw createHttpError(message || $t('httpMsg.forbidden'), ApiStatus.forbidden)
 }
 
 /** 退出登录函数 */

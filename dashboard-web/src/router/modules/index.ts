@@ -1,19 +1,17 @@
 import { AppRouteRecord } from '@/types/router'
 import { dashboardRoutes } from './dashboard'
 import { systemRoutes } from './system'
-import { resultRoutes } from './result'
-import { exceptionRoutes } from './exception'
-import { userRoutes } from './user'   // 新增
 import { detaildataRoutes } from './detail'
+import { dataImportRoutes } from './data-import'
+import { analysisRoutes } from './analysis'
 
 /**
  * 导出所有模块化路由
  */
 export const routeModules: AppRouteRecord[] = [
   dashboardRoutes,
+  analysisRoutes,
   systemRoutes,
-  resultRoutes,
-  exceptionRoutes,
-  userRoutes,
-  detaildataRoutes
+  detaildataRoutes,
+  dataImportRoutes
 ]

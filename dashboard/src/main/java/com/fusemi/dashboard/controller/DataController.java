@@ -8,9 +8,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 业务数据 Controller
+ * 提供聚合统计数据供仪表盘使用
  */
 @RestController
 @RequestMapping("/api/data")
@@ -23,62 +25,100 @@ public class DataController {
     }
 
     @GetMapping("/sales")
-    @PreAuthorize("isAuthenticated()")
-    public Result<?> getSalesList(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size,
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_USER', 'R_SALES')")
+    public Result<List<SalesMonthlyVO>> getSalesList(
+            @RequestParam(required = false) Integer year,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return Result.ok(dataService.getSalesPage(current, size, startDate, endDate));
+        if (startDate != null && endDate != null) {
+            return Result.ok(dataService.getSalesMonthlyData(startDate, endDate));
+        }
+        return Result.ok(dataService.getSalesMonthlyData(year));
     }
 
     @GetMapping("/shipment")
-    @PreAuthorize("isAuthenticated()")
-    public Result<?> getShipmentList(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size,
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_USER', 'R_SALES')")
+    public Result<List<SalesShipmentMonthlyVO>> getShipmentList(
+            @RequestParam(required = false) Integer year,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return Result.ok(dataService.getShipmentPage(current, size, startDate, endDate));
+        if (startDate != null && endDate != null) {
+            return Result.ok(dataService.getShipmentMonthlyData(startDate, endDate));
+        }
+        return Result.ok(dataService.getShipmentMonthlyData(year));
     }
 
-    @GetMapping("/order")
-    @PreAuthorize("isAuthenticated()")
-    public Result<?> getOrderList(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size,
+    @GetMapping("/products")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_USER', 'R_SALES')")
+    public Result<List<SalesProductVO>> getProductRanking(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(defaultValue = "10") Integer limit,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return Result.ok(dataService.getOrderPage(current, size, startDate, endDate));
+        if (startDate != null && endDate != null) {
+            return Result.ok(dataService.getProductRanking(startDate, endDate, limit));
+        }
+        return Result.ok(dataService.getProductRanking(year, month, limit));
     }
 
-    @GetMapping("/invoice")
-    @PreAuthorize("isAuthenticated()")
-    public Result<?> getInvoiceList(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size,
+    @GetMapping("/salespersons")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_SALES')")
+    public Result<List<SalesPersonVO>> getSalespersonRanking(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return Result.ok(dataService.getInvoicePage(current, size, startDate, endDate));
+        if (startDate != null && endDate != null) {
+            return Result.ok(dataService.getSalespersonRanking(startDate, endDate));
+        }
+        return Result.ok(dataService.getSalespersonRanking(year, month));
     }
 
-    @GetMapping("/deal")
-    @PreAuthorize("isAuthenticated()")
-    public Result<?> getDealList(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size,
+    @GetMapping("/regions")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_SALES')")
+    public Result<List<SalesRegionVO>> getRegionStats(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        return Result.ok(dataService.getDealPage(current, size, startDate, endDate));
+        if (startDate != null && endDate != null) {
+            return Result.ok(dataService.getRegionStats(startDate, endDate));
+        }
+        return Result.ok(dataService.getRegionStats(year, month));
     }
 
-    @GetMapping("/customer")
-    @PreAuthorize("isAuthenticated()")
-    public Result<?> getCustomerList(
-            @RequestParam(defaultValue = "1") Integer current,
-            @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) String channel,
-            @RequestParam(required = false) Integer isNew) {
-        return Result.ok(dataService.getCustomerPage(current, size, channel, isNew));
+    @GetMapping("/years")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_USER', 'R_SALES')")
+    public Result<List<Integer>> getAvailableYears() {
+        return Result.ok(dataService.getAvailableYears());
+    }
+
+    @GetMapping("/salespersons/list")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_USER', 'R_SALES')")
+    public Result<List<String>> getSalespersonList() {
+        return Result.ok(dataService.getSalespersonList());
+    }
+
+    @GetMapping("/regions/list")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_USER', 'R_SALES')")
+    public Result<List<String>> getRegionList() {
+        return Result.ok(dataService.getRegionList());
+    }
+
+    @GetMapping("/orders")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_USER', 'R_SALES')")
+    public Result<List<OrderTrackingVO>> getRecentOrders(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return Result.ok(dataService.getRecentOrders(startDate, endDate));
+    }
+
+    @GetMapping("/orders/overdue")
+    @PreAuthorize("hasAnyRole('R_SUPER', 'R_ADMIN', 'R_USER', 'R_SALES')")
+    public Result<List<OrderTrackingVO>> getOverdueOrders(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return Result.ok(dataService.getOverdueOrders(startDate, endDate));
     }
 }

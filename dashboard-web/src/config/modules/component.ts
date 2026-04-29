@@ -12,7 +12,7 @@
  * - 配置查询 - 提供工具函数快速查询组件配置
  *
  * @module config/component
- * @author Art Design Pro Team
+
  */
 
 import { defineAsyncComponent } from 'vue'
@@ -51,7 +51,7 @@ export const globalComponentsConfig: GlobalComponentConfig[] = [
     component: defineAsyncComponent(
       () => import('@/components/core/layouts/art-chat-window/index.vue')
     ),
-    enabled: true
+    enabled: false
   },
   {
     name: '礼花效果',

@@ -2,41 +2,42 @@
 <template>
   <div class="data-import-page art-full-height p-5">
     <!-- 文件上传 -->
-    <ElCard class="art-table-card" shadow="never">
+    <ElCard class="art-table-card mb-5" shadow="never">
       <template #header>
         <div class="flex justify-between items-center">
-          <h3 class="text-lg font-medium">数据导入</h3>
-          <el-button size="small" text @click="loadImportTypes">
-            <Refresh class="mr-1" />
-            刷新
-          </el-button>
+          <h3 class="text-lg font-medium">销售订单数据导入</h3>
         </div>
       </template>
 
-      <div class="max-w-4xl">
-        <!-- 数据类型选择 -->
-        <div class="mb-6">
-          <h4 class="text-base font-medium mb-3 text-gray-800 dark:text-gray-200">选择数据类型</h4>
-          <ElRadioGroup v-model="selectedType" size="large">
-            <ElRadioButton
-              v-for="item in importTypes"
-              :key="item.type"
-              :value="item.type"
-            >
-              {{ item.name }}
-            </ElRadioButton>
-          </ElRadioGroup>
+      <div>
+        <!-- 说明 -->
+        <div class="mb-4">
+          <ElAlert
+            type="info"
+            :closable="false"
+            show-icon
+          >
+            <template #title>
+              <span class="font-medium">支持导入 Excel 文件（.xlsx / .xls）</span>
+            </template>
+            <div class="text-sm mt-2 space-y-1">
+              <p>1. 上传包含 Sheet1 + Sheet2 的销售订单 Excel 文件</p>
+              <p>2. 系统会自动解析所有 Sheet 中的数据</p>
+              <p>3. 基于 订单编号 + 行号 自动去重，重复数据会更新而非追加</p>
+              <p>4. 支持 Excel 数字日期格式自动转换</p>
+            </div>
+          </ElAlert>
         </div>
 
         <!-- 文件上传区域 -->
-        <div class="mb-6">
+        <div class="mb-4">
           <ElUpload
             ref="uploadRef"
             class="upload-area"
             drag
             :auto-upload="false"
             :limit="1"
-            :accept="acceptTypes"
+            accept=".xlsx,.xls"
             :on-change="handleFileChange"
             :on-remove="handleFileRemove"
           >
@@ -46,14 +47,14 @@
             </div>
             <template #tip>
               <div class="el-upload__tip">
-                支持 {{ selectedTypeInfo?.extensions || '.xlsx, .xls, .csv' }} 格式，文件大小不超过 10MB
+                支持 .xlsx, .xls 格式，文件大小不超过 10MB
               </div>
             </template>
           </ElUpload>
         </div>
 
         <!-- 操作按钮 -->
-        <div class="flex gap-3">
+        <div class="flex gap-3 mb-4">
           <ElButton
             type="primary"
             :loading="uploading"
@@ -70,7 +71,7 @@
         </div>
 
         <!-- 导入结果 -->
-        <div v-if="importResult" class="mt-6">
+        <div v-if="importResult" class="mb-4">
           <ElAlert
             :type="importResult.code === 200 ? 'success' : 'error'"
             :title="importResult.code === 200 ? '导入完成' : '导入失败'"
@@ -78,9 +79,11 @@
             show-icon
           />
           <div v-if="importResult.data" class="mt-3 import-result-box">
-            <div class="flex gap-6 text-sm">
+            <div class="flex gap-6 text-sm flex-wrap">
               <span class="text-gray-800 dark:text-gray-200">总记录: <strong>{{ importResult.data.total }}</strong></span>
               <span class="text-green-600">成功: <strong>{{ importResult.data.success }}</strong></span>
+              <span class="text-blue-600">新建: <strong>{{ importResult.data.created || 0 }}</strong></span>
+              <span class="text-orange-600">更新: <strong>{{ importResult.data.updated || 0 }}</strong></span>
               <span class="text-red-600">失败: <strong>{{ importResult.data.failed }}</strong></span>
             </div>
             <div v-if="importResult.data.errors && importResult.data.errors.length > 0" class="mt-3">
@@ -95,25 +98,63 @@
     </ElCard>
 
     <!-- 导入记录 -->
-    <ElCard class="art-table-card mt-5" shadow="never">
+    <ElCard class="art-table-card mt-4" shadow="never">
       <template #header>
-        <h3 class="text-lg font-medium">导入记录</h3>
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-medium">导入记录</h3>
+          <ElButton type="primary" link size="small" @click="loadImportHistory">
+            <Refresh class="mr-1" />刷新
+          </ElButton>
+        </div>
       </template>
-      <ElEmpty description="暂无导入记录" />
+
+      <ElTable v-if="importHistory.length > 0" :data="importHistory" size="small" style="width: 100%">
+        <ElTableColumn type="index" width="50" align="center" />
+        <ElTableColumn prop="fileName" label="文件名" min-width="200" show-overflow-tooltip />
+        <ElTableColumn prop="importTime" label="导入时间" width="160" />
+        <ElTableColumn prop="total" label="总记录" width="80" align="center" />
+        <ElTableColumn prop="success" label="成功" width="80" align="center">
+          <template #default="{ row }">
+            <span class="text-green-600">{{ row.success }}</span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="created" label="新建" width="80" align="center">
+          <template #default="{ row }">
+            <span class="text-blue-600">{{ row.created || 0 }}</span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="updated" label="更新" width="80" align="center">
+          <template #default="{ row }">
+            <span class="text-orange-600">{{ row.updated || 0 }}</span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="failed" label="失败" width="80" align="center">
+          <template #default="{ row }">
+            <span :class="row.failed > 0 ? 'text-red-600' : ''">{{ row.failed }}</span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="status" label="状态" width="90" align="center">
+          <template #default="{ row }">
+            <ElTag :type="row.status === 'success' ? 'success' : row.status === 'partial' ? 'warning' : 'danger'" size="small">
+              {{ row.status === 'success' ? '成功' : row.status === 'partial' ? '部分成功' : '失败' }}
+            </ElTag>
+          </template>
+        </ElTableColumn>
+      </ElTable>
+      <ElEmpty v-else description="暂无导入记录" />
     </ElCard>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { UploadFilled, Upload, Refresh } from '@element-plus/icons-vue'
-import { fetchImportTypes, fetchImportData } from '@/api/dashboard'
+import { fetchImportData } from '@/api/dashboard'
 
 defineOptions({ name: 'DataImport' })
 
 const uploadRef = ref()
-const selectedType = ref('sales')
 const selectedFile = ref<File | null>(null)
 const uploading = ref(false)
 const importResult = ref<{
@@ -123,38 +164,56 @@ const importResult = ref<{
     total: number
     success: number
     failed: number
+    created?: number
+    updated?: number
     errors: string[]
   }
 } | null>(null)
 
-interface ImportType {
-  type: string
-  name: string
-  extensions: string
+// 导入记录（使用 localStorage 存储）
+interface ImportRecord {
+  fileName: string
+  importTime: string
+  total: number
+  success: number
+  failed: number
+  created?: number
+  updated?: number
+  status: 'success' | 'partial' | 'failed'
 }
 
-const importTypes = ref<ImportType[]>([])
+const importHistory = ref<ImportRecord[]>([])
 
-const selectedTypeInfo = computed(() =>
-  importTypes.value.find(t => t.type === selectedType.value)
-)
-
-const acceptTypes = computed(() => {
-  const ext = selectedTypeInfo.value?.extensions || '.xlsx,.xls,.csv'
-  return ext.replace(/\s/g, '')
-})
-
-// 加载导入类型
-const loadImportTypes = async () => {
+// 加载导入记录
+const loadImportHistory = () => {
   try {
-    const res: any = await fetchImportTypes()
-    if (res && res.code === 200 && res.data) {
-      importTypes.value = res.data
+    const stored = localStorage.getItem('import_history')
+    if (stored) {
+      importHistory.value = JSON.parse(stored)
     }
-  } catch (error) {
-    console.error('获取导入类型失败:', error)
-    ElMessage.error('获取导入类型失败')
+  } catch {
+    importHistory.value = []
   }
+}
+
+// 保存导入记录
+const saveImportRecord = (fileName: string, data: any) => {
+  const record: ImportRecord = {
+    fileName,
+    importTime: new Date().toLocaleString('zh-CN'),
+    total: data.total || 0,
+    success: data.success || 0,
+    failed: data.failed || 0,
+    created: data.created || 0,
+    updated: data.updated || 0,
+    status: data.failed === 0 ? 'success' : data.success > 0 ? 'partial' : 'failed'
+  }
+  importHistory.value.unshift(record)
+  // 最多保留 50 条
+  if (importHistory.value.length > 50) {
+    importHistory.value = importHistory.value.slice(0, 50)
+  }
+  localStorage.setItem('import_history', JSON.stringify(importHistory.value))
 }
 
 // 文件变化
@@ -180,11 +239,17 @@ const handleImport = async () => {
   importResult.value = null
 
   try {
-    const res: any = await fetchImportData(selectedFile.value, selectedType.value)
+    const res: any = await fetchImportData(selectedFile.value, 'order')
     importResult.value = {
       code: res.code,
       message: res.message || (res.code === 200 ? '导入成功' : '导入失败'),
       data: res.data
+    }
+
+    // 保存到导入记录
+    if (res.data || res.code === 200) {
+      const recordData = res.data || { total: 0, success: 0, failed: 0, created: 0, updated: 0 }
+      saveImportRecord(selectedFile.value.name, recordData)
     }
 
     if (res.code === 200) {
@@ -210,8 +275,9 @@ const handleReset = () => {
   uploadRef.value?.clearFiles()
 }
 
-// 初始化
-loadImportTypes()
+onMounted(() => {
+  loadImportHistory()
+})
 </script>
 
 <style scoped>

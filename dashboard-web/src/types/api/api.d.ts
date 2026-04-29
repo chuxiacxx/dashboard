@@ -29,7 +29,7 @@
  * ```
  *
  * @module types/api/api
- * @author Art Design Pro Team
+
  */
 
 declare namespace Api {
@@ -80,7 +80,10 @@ declare namespace Api {
       roles: string[]
       userId: number
       userName: string
+      nickName: string
       email: string
+      phone: string
+      gender: string
       avatar?: string
     }
   }

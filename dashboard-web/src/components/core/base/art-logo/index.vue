@@ -1,7 +1,7 @@
 <!-- 系统logo -->
 <template>
   <div class="flex-cc">
-    <img :style="logoStyle" src="@imgs/common/logo.webp" alt="logo" class="w-full h-full" />
+    <img :style="logoStyle" src="@imgs/common/logo.png" alt="logo" class="w-full h-full" />
   </div>
 </template>
 
@@ -14,8 +14,8 @@
   }
 
   const props = withDefaults(defineProps<Props>(), {
-    size: 36
+    size: 32
   })
 
-  const logoStyle = computed(() => ({ width: `${props.size}px` }))
+  const logoStyle = computed(() => ({ height: `${props.size}px`, width: 'auto' }))
 </script>

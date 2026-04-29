@@ -4,7 +4,7 @@
  * 负责菜单数据的获取、过滤和处理
  *
  * @module router/core/MenuProcessor
- * @author Art Design Pro Team
+
  */
 
 import type { AppRouteRecord } from '@/types/router'
@@ -43,11 +43,17 @@ export class MenuProcessor {
     const userStore = useUserStore()
     const roles = userStore.info?.roles
 
+    // 防御性检查：确保 roles 是有效数组
+    const hasValidRoles = Array.isArray(roles) && roles.length > 0
+
     let menuList = [...asyncRoutes]
 
     // 根据角色过滤菜单
-    if (roles && roles.length > 0) {
+    if (hasValidRoles) {
       menuList = this.filterMenuByRoles(menuList, roles)
+    } else {
+      // 没有有效角色时，只保留没有 roles 限制的菜单
+      menuList = this.filterMenuByRoles(menuList, [])
     }
 
     return this.filterEmptyMenus(menuList)
