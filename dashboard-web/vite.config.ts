@@ -25,7 +25,7 @@ export default ({ mode }: { mode: string }) => {
     },
     base: VITE_BASE_URL,
     server: {
-      port: Number(VITE_PORT),
+      port: 3006,
       proxy: {
         '/api': {
           target: 'http://localhost:8080',
